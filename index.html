@@ -10,70 +10,73 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
-    <!-- Enlace a CSS externo -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="bg-gray-100 min-h-screen text-gray-800 font-sans">
 
-    <!-- Navbar -->
-    <nav id="navbar" class="bg-blue-900 text-white p-4 shadow-md hidden flex justify-between items-center z-50 relative">
-        <div class="flex items-center gap-3">
-            <i class="fas fa-building text-2xl"></i>
-            <h1 class="text-xl font-bold cursor-pointer" onclick="showDashboard()">Despacho Central</h1>
+    <!-- Navbar Adaptable a Móvil -->
+    <nav id="navbar" class="bg-blue-900 text-white p-2 sm:p-4 shadow-md hidden flex flex-wrap justify-between items-center z-50 relative gap-2">
+        <div class="flex items-center gap-2">
+            <i class="fas fa-building text-lg sm:text-2xl text-blue-200"></i>
+            <h1 class="text-base sm:text-xl font-bold cursor-pointer truncate" onclick="showDashboard()">Despacho Central</h1>
         </div>
-        <div class="flex items-center gap-4">
-            <span id="user-info" class="text-sm font-medium"></span>
+        
+        <div class="flex items-center gap-1.5 sm:gap-3 text-xs sm:text-sm flex-wrap">
+            <span id="user-info" class="hidden md:inline font-medium text-gray-200 mr-2"></span>
             
-            <!-- Navegación Principal -->
-            <button onclick="showDashboard()" class="text-sm bg-blue-800 hover:bg-blue-700 text-white font-semibold py-1 px-3 rounded transition">
-                <i class="fas fa-th-large mr-1"></i> Direcciones
-            </button>
-            <button onclick="showAgenda()" class="text-sm bg-purple-700 hover:bg-purple-800 text-white font-semibold py-1 px-3 rounded transition">
-                <i class="fas fa-calendar-alt mr-1"></i> Agenda de Reuniones
+            <button onclick="showDashboard()" class="bg-blue-800 hover:bg-blue-700 text-white font-semibold py-1 px-2 sm:px-3 rounded transition flex items-center gap-1">
+                <i class="fas fa-th-large"></i> <span class="hidden sm:inline">Direcciones</span>
             </button>
             
-            <!-- Botón Admin (Solo visible para admin) -->
-            <button id="btn-admin-panel" class="hidden text-sm bg-yellow-500 hover:bg-yellow-600 text-blue-900 font-bold py-1 px-3 rounded transition">
-                <i class="fas fa-cogs mr-1"></i> Admin
+            <button onclick="showAgenda()" class="bg-purple-700 hover:bg-purple-800 text-white font-semibold py-1 px-2 sm:px-3 rounded transition flex items-center gap-1">
+                <i class="fas fa-calendar-alt"></i> <span class="hidden sm:inline">Agenda</span>
+            </button>
+            
+            <button id="btn-admin-panel" class="hidden bg-yellow-500 hover:bg-yellow-600 text-blue-900 font-bold py-1 px-2 sm:px-3 rounded transition flex items-center gap-1">
+                <i class="fas fa-cogs"></i> <span class="hidden sm:inline">Admin</span>
             </button>
 
-            <!-- Campana de Notificaciones -->
-            <div class="relative cursor-pointer" onclick="toggleNotifications()">
-                <i class="fas fa-bell text-xl hover:text-yellow-400 transition"></i>
-                <span id="notif-badge" class="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full hidden">0</span>
+            <!-- Campana de Alertas / Comentarios -->
+            <div class="relative cursor-pointer px-1 py-1" onclick="toggleNotifications()">
+                <i class="fas fa-bell text-lg sm:text-xl text-yellow-300 hover:text-yellow-400 transition"></i>
+                <span id="notif-badge" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.2 rounded-full hidden">0</span>
                 
-                <!-- Dropdown Notificaciones -->
-                <div id="notif-dropdown" class="absolute right-0 mt-2 w-64 bg-white text-gray-800 rounded shadow-lg border hidden z-50">
-                    <div class="p-2 border-b font-bold text-sm bg-gray-50">Notificaciones</div>
-                    <div id="notif-list" class="max-h-64 overflow-y-auto p-2 text-sm"></div>
+                <!-- Panel Dropdown de Alertas -->
+                <div id="notif-dropdown" class="absolute right-0 mt-2 w-72 sm:w-80 bg-white text-gray-800 rounded shadow-xl border hidden z-50">
+                    <div class="p-2 border-b font-bold text-xs sm:text-sm bg-gray-100 flex justify-between items-center">
+                        <span><i class="fas fa-bell text-yellow-600 mr-1"></i> Panel de Alertas y Comentarios</span>
+                    </div>
+                    <div id="notif-list" class="max-h-72 overflow-y-auto p-2 text-xs divide-y divide-gray-100">
+                        <div class="p-3 text-center text-gray-400">Sin notificaciones por ahora</div>
+                    </div>
                 </div>
             </div>
 
-            <button onclick="logout()" class="text-sm bg-red-600 hover:bg-red-700 text-white py-1 px-3 rounded transition">
-                <i class="fas fa-sign-out-alt"></i> Salir
+            <button onclick="logout()" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-1 px-2 sm:px-3 rounded transition flex items-center gap-1">
+                <i class="fas fa-sign-out-alt"></i> <span class="hidden sm:inline">Salir</span>
             </button>
         </div>
     </nav>
 
     <!-- Vista: Login -->
     <div id="view-login" class="min-h-screen flex items-center justify-center p-4">
-        <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
+        <div class="bg-white p-6 sm:p-8 rounded-lg shadow-xl w-full max-w-md">
             <div class="text-center mb-6">
-                <i class="fas fa-clipboard-list text-5xl text-blue-900 mb-2"></i>
-                <h2 class="text-2xl font-bold text-gray-800">Sistema de Tareas</h2>
-                <p class="text-gray-500 text-sm">Dirección de Despacho</p>
+                <i class="fas fa-clipboard-list text-4xl sm:text-5xl text-blue-900 mb-2"></i>
+                <h2 class="text-xl sm:text-2xl font-bold text-gray-800">Sistema de Tareas</h2>
+                <p class="text-gray-500 text-xs sm:text-sm">Dirección de Despacho</p>
             </div>
             
             <form id="login-form" class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Correo Electrónico</label>
-                    <input type="email" id="login-email" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    <label class="block text-xs sm:text-sm font-medium text-gray-700">Correo Electrónico</label>
+                    <input type="email" id="login-email" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 text-sm">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Contraseña</label>
-                    <input type="password" id="login-password" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    <label class="block text-xs sm:text-sm font-medium text-gray-700">Contraseña</label>
+                    <input type="password" id="login-password" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 text-sm">
                 </div>
-                <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-900 hover:bg-blue-800 focus:outline-none">
+                <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-900 hover:bg-blue-800">
                     Iniciar Sesión
                 </button>
             </form>
@@ -81,54 +84,54 @@
     </div>
 
     <!-- Vista: Admin Panel -->
-    <div id="view-admin" class="hidden p-6 max-w-4xl mx-auto">
+    <div id="view-admin" class="hidden p-3 sm:p-6 max-w-4xl mx-auto">
         <div class="flex justify-between items-center mb-6">
-            <h2 class="text-2xl font-bold text-blue-900"><i class="fas fa-users-cog mr-2"></i>Panel de Administración</h2>
-            <button onclick="showDashboard()" class="bg-gray-600 hover:bg-gray-700 text-white py-1 px-4 rounded text-sm transition">
+            <h2 class="text-xl sm:text-2xl font-bold text-blue-900"><i class="fas fa-users-cog mr-2"></i>Panel de Administración</h2>
+            <button onclick="showDashboard()" class="bg-gray-600 hover:bg-gray-700 text-white py-1 px-3 rounded text-xs sm:text-sm transition">
                 <i class="fas fa-arrow-left mr-1"></i> Volver
             </button>
         </div>
 
-        <div class="bg-white p-6 rounded shadow mb-6">
-            <h3 class="text-lg font-bold mb-4 border-b pb-2">Registrar Nuevo Usuario</h3>
+        <div class="bg-white p-4 sm:p-6 rounded shadow mb-6">
+            <h3 class="text-base font-bold mb-4 border-b pb-2">Registrar Nuevo Usuario</h3>
             <form id="register-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Nombre Completo</label>
-                    <input type="text" id="reg-name" required class="mt-1 w-full border rounded py-2 px-3">
+                    <label class="block text-xs font-medium text-gray-700">Nombre Completo</label>
+                    <input type="text" id="reg-name" required class="mt-1 w-full border rounded py-2 px-3 text-sm">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Correo Electrónico</label>
-                    <input type="email" id="reg-email" required class="mt-1 w-full border rounded py-2 px-3">
+                    <label class="block text-xs font-medium text-gray-700">Correo Electrónico</label>
+                    <input type="email" id="reg-email" required class="mt-1 w-full border rounded py-2 px-3 text-sm">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Contraseña</label>
-                    <input type="password" id="reg-password" required minlength="4" class="mt-1 w-full border rounded py-2 px-3">
+                    <label class="block text-xs font-medium text-gray-700">Contraseña</label>
+                    <input type="password" id="reg-password" required minlength="4" class="mt-1 w-full border rounded py-2 px-3 text-sm">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Rol del Usuario</label>
-                    <select id="reg-role" required class="mt-1 w-full border rounded py-2 px-3 bg-white">
+                    <label class="block text-xs font-medium text-gray-700">Rol del Usuario</label>
+                    <select id="reg-role" required class="mt-1 w-full border rounded py-2 px-3 bg-white text-sm">
                         <option value="" disabled selected>Seleccione un rol...</option>
                         <option value="director">Director</option>
                         <option value="seguimiento">Seguimiento</option>
                     </select>
                 </div>
                 <div class="md:col-span-2 mt-2">
-                    <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded font-bold transition">
+                    <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded font-bold text-sm transition">
                         <i class="fas fa-user-plus mr-1"></i> Crear Usuario
                     </button>
                 </div>
             </form>
         </div>
 
-        <div class="bg-white p-6 rounded shadow">
-            <h3 class="text-lg font-bold mb-4 border-b pb-2">Usuarios Registrados</h3>
+        <div class="bg-white p-4 sm:p-6 rounded shadow">
+            <h3 class="text-base font-bold mb-4 border-b pb-2">Usuarios Registrados</h3>
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
+                <table class="min-w-full divide-y divide-gray-200 text-xs sm:text-sm">
                     <thead class="bg-gray-50">
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Correo</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rol</th>
+                            <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase">Nombre</th>
+                            <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase">Correo</th>
+                            <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase">Rol</th>
                         </tr>
                     </thead>
                     <tbody id="users-table-body" class="bg-white divide-y divide-gray-200"></tbody>
@@ -138,32 +141,32 @@
     </div>
 
     <!-- Vista: Dashboard (Direcciones) -->
-    <div id="view-dashboard" class="hidden p-6 max-w-6xl mx-auto">
-        <h2 class="text-2xl font-bold text-gray-800 mb-6">Direcciones del Despacho</h2>
-        <div id="direcciones-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    <div id="view-dashboard" class="hidden p-3 sm:p-6 max-w-6xl mx-auto">
+        <h2 class="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-6">Direcciones del Despacho</h2>
+        <div id="direcciones-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4"></div>
     </div>
 
     <!-- Vista: Agenda de Reuniones -->
-    <div id="view-agenda" class="hidden p-6 max-w-6xl mx-auto">
-        <div class="flex justify-between items-center mb-6">
+    <div id="view-agenda" class="hidden p-3 sm:p-6 max-w-6xl mx-auto">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
             <div>
-                <h2 class="text-2xl font-bold text-purple-900"><i class="fas fa-calendar-alt mr-2"></i>Agenda de Reuniones del Despacho</h2>
-                <p class="text-sm text-gray-500">Programación de mesas de trabajo, convocatorias e insumos requeridos</p>
+                <h2 class="text-xl sm:text-2xl font-bold text-purple-900"><i class="fas fa-calendar-alt mr-2"></i>Agenda de Reuniones</h2>
+                <p class="text-xs sm:text-sm text-gray-500">Programación de mesas de trabajo e insumos requeridos</p>
             </div>
-            <button onclick="openMeetingModal()" class="bg-purple-700 hover:bg-purple-800 text-white font-bold py-2 px-4 rounded shadow transition">
+            <button onclick="openMeetingModal()" class="bg-purple-700 hover:bg-purple-800 text-white font-bold py-2 px-4 rounded shadow text-xs sm:text-sm transition">
                 <i class="fas fa-plus mr-1"></i> Agendar Reunión
             </button>
         </div>
 
         <div class="bg-white rounded-lg shadow overflow-hidden">
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
+                <table class="min-w-full divide-y divide-gray-200 text-xs sm:text-sm">
                     <thead class="bg-purple-50">
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-purple-900 uppercase">Fecha / Hora</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-purple-900 uppercase">Asunto y Requerimientos</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-purple-900 uppercase">Direcciones Convocadas</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-purple-900 uppercase">Estado / Minuta</th>
+                            <th class="px-4 py-3 text-left font-medium text-purple-900 uppercase">Fecha / Hora</th>
+                            <th class="px-4 py-3 text-left font-medium text-purple-900 uppercase">Asunto y Requerimientos</th>
+                            <th class="px-4 py-3 text-left font-medium text-purple-900 uppercase">Direcciones Convocadas</th>
+                            <th class="px-4 py-3 text-left font-medium text-purple-900 uppercase">Estado / Minuta</th>
                         </tr>
                     </thead>
                     <tbody id="meetings-tbody" class="bg-white divide-y divide-gray-200"></tbody>
@@ -173,32 +176,32 @@
     </div>
 
     <!-- Vista: Tareas por Dirección -->
-    <div id="view-tasks" class="hidden p-6 max-w-6xl mx-auto">
-        <div class="flex justify-between items-center mb-6">
-            <h2 id="current-dir-title" class="text-2xl font-bold text-blue-900"></h2>
-            <button onclick="showDashboard()" class="bg-gray-600 hover:bg-gray-700 text-white py-1 px-4 rounded text-sm transition">
-                <i class="fas fa-arrow-left mr-1"></i> Volver a Direcciones
+    <div id="view-tasks" class="hidden p-3 sm:p-6 max-w-6xl mx-auto">
+        <div class="flex justify-between items-center mb-4 sm:mb-6">
+            <h2 id="current-dir-title" class="text-lg sm:text-2xl font-bold text-blue-900 truncate"></h2>
+            <button onclick="showDashboard()" class="bg-gray-600 hover:bg-gray-700 text-white py-1 px-3 rounded text-xs sm:text-sm transition">
+                <i class="fas fa-arrow-left mr-1"></i> Volver
             </button>
         </div>
 
-        <div class="flex gap-4 mb-6">
-            <button onclick="openTaskModal()" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded shadow font-medium transition">
+        <div class="flex gap-2 sm:gap-4 mb-4 sm:mb-6">
+            <button onclick="openTaskModal()" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-3 sm:px-4 rounded shadow font-medium text-xs sm:text-sm transition">
                 <i class="fas fa-plus mr-1"></i> Nueva Tarea
             </button>
-            <button onclick="openCallModal()" class="bg-orange-500 hover:bg-orange-600 text-white py-2 px-4 rounded shadow font-medium transition">
+            <button onclick="openCallModal()" class="bg-orange-500 hover:bg-orange-600 text-white py-2 px-3 sm:px-4 rounded shadow font-medium text-xs sm:text-sm transition">
                 <i class="fas fa-bullhorn mr-1"></i> Convocar Personal
             </button>
         </div>
 
         <div class="bg-white rounded-lg shadow overflow-hidden">
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
+                <table class="min-w-full divide-y divide-gray-200 text-xs sm:text-sm">
                     <thead class="bg-gray-50">
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tarea / Asunto</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Responsable y Fecha</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Avances y Bitácora</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado y Auditoría</th>
+                            <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase">Tarea / Asunto</th>
+                            <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase">Responsable y Fecha</th>
+                            <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase">Avances y Bitácora</th>
+                            <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase">Estado y Auditoría</th>
                         </tr>
                     </thead>
                     <tbody id="tasks-tbody" class="bg-white divide-y divide-gray-200"></tbody>
@@ -208,100 +211,95 @@
     </div>
 
     <!-- Modal: Nueva Reunión -->
-    <div id="modal-meeting" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
-        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-lg">
-            <h3 class="text-lg font-bold mb-4 text-purple-900"><i class="fas fa-calendar-plus mr-2"></i>Agendar Reunión</h3>
-            <form id="form-meeting" class="space-y-4">
+    <div id="modal-meeting" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50 p-4">
+        <div class="bg-white p-5 rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <h3 class="text-base sm:text-lg font-bold mb-3 text-purple-900"><i class="fas fa-calendar-plus mr-2"></i>Agendar Reunión</h3>
+            <form id="form-meeting" class="space-y-3">
                 <div>
-                    <label class="block text-sm font-medium">Asunto / Motivo</label>
+                    <label class="block text-xs font-medium">Asunto / Motivo</label>
                     <input type="text" id="meet-title" required class="mt-1 w-full border rounded py-2 px-3 text-sm" placeholder="Ej: Revisión de casos de viviendas afectadas">
                 </div>
                 
-                <!-- Convocatoria Multidireccional -->
                 <div>
-                    <label class="block text-sm font-medium mb-1">Direcciones Convocadas (Seleccione una o varias)</label>
-                    <div id="meet-dirs-container" class="max-h-36 overflow-y-auto border rounded p-2 bg-gray-50 text-xs grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                        <!-- Checkboxes dinámicos -->
-                    </div>
+                    <label class="block text-xs font-medium mb-1">Direcciones Convocadas</label>
+                    <div id="meet-dirs-container" class="max-h-32 overflow-y-auto border rounded p-2 bg-gray-50 text-xs grid grid-cols-1 gap-1"></div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-2">
                     <div>
-                        <label class="block text-sm font-medium">Fecha</label>
+                        <label class="block text-xs font-medium">Fecha</label>
                         <input type="date" id="meet-date" required class="mt-1 w-full border rounded py-2 px-3 text-sm">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium">Hora</label>
+                        <label class="block text-xs font-medium">Hora</label>
                         <input type="time" id="meet-time" required class="mt-1 w-full border rounded py-2 px-3 text-sm">
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium">Orden del Día / Puntos a Tratar</label>
-                    <textarea id="meet-agenda" required class="mt-1 w-full border rounded py-2 px-3 text-sm" rows="2" placeholder="Ej: Evaluar daños estructurales, plan de abordaje..."></textarea>
+                    <label class="block text-xs font-medium">Orden del Día / Puntos a Tratar</label>
+                    <textarea id="meet-agenda" required class="mt-1 w-full border rounded py-2 px-3 text-sm" rows="2" placeholder="Puntos a tratar..."></textarea>
                 </div>
 
-                <!-- Campo de Requerimientos Previos -->
                 <div>
-                    <label class="block text-sm font-medium text-amber-900 font-bold">Requerimientos / Materiales Necesarios</label>
-                    <textarea id="meet-reqs" class="mt-1 w-full border border-amber-300 bg-amber-50 rounded py-2 px-3 text-sm" rows="2" placeholder="Ej: Traer fichas técnicas de cada casa, expedientes de inspección, presupuestos..."></textarea>
+                    <label class="block text-xs font-medium text-amber-900 font-bold">Requerimientos / Materiales Necesarios</label>
+                    <textarea id="meet-reqs" class="mt-1 w-full border border-amber-300 bg-amber-50 rounded py-2 px-3 text-sm" rows="2" placeholder="Ej: Traer fichas técnicas, expedientes..."></textarea>
                 </div>
 
                 <div class="flex justify-end gap-2 mt-4">
-                    <button type="button" onclick="closeModals()" class="bg-gray-300 hover:bg-gray-400 py-1.5 px-4 rounded text-sm">Cancelar</button>
-                    <button type="submit" class="bg-purple-700 hover:bg-purple-800 text-white py-1.5 px-4 rounded text-sm font-bold">Agendar Reunión</button>
+                    <button type="button" onclick="closeModals()" class="bg-gray-300 hover:bg-gray-400 py-1.5 px-4 rounded text-xs sm:text-sm">Cancelar</button>
+                    <button type="submit" class="bg-purple-700 hover:bg-purple-800 text-white py-1.5 px-4 rounded text-xs sm:text-sm font-bold">Agendar</button>
                 </div>
             </form>
         </div>
     </div>
 
     <!-- Modal: Nueva Tarea -->
-    <div id="modal-task" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
-        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
-            <h3 class="text-lg font-bold mb-4">Agregar Tarea</h3>
-            <form id="form-task" class="space-y-4">
+    <div id="modal-task" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50 p-4">
+        <div class="bg-white p-5 rounded-lg shadow-xl w-full max-w-md">
+            <h3 class="text-base sm:text-lg font-bold mb-3">Agregar Tarea</h3>
+            <form id="form-task" class="space-y-3 text-xs sm:text-sm">
                 <div>
-                    <label class="block text-sm font-medium">Descripción / Asunto</label>
-                    <textarea id="task-desc" required class="mt-1 w-full border rounded py-2 px-3" rows="3" placeholder="Detalle la tarea o tema pendiente..."></textarea>
+                    <label class="block font-medium">Descripción / Asunto</label>
+                    <textarea id="task-desc" required class="mt-1 w-full border rounded py-2 px-3" rows="3" placeholder="Detalle la tarea..."></textarea>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium">Responsable</label>
-                    <select id="task-resp" required class="mt-1 w-full border rounded py-2 px-3"></select>
+                    <label class="block font-medium">Responsable</label>
+                    <select id="task-resp" required class="mt-1 w-full border rounded py-2 px-3 bg-white"></select>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium">Fecha de Cumplimiento</label>
+                    <label class="block font-medium">Fecha de Cumplimiento</label>
                     <input type="date" id="task-date" required class="mt-1 w-full border rounded py-2 px-3">
                 </div>
                 <div class="flex justify-end gap-2 mt-4">
-                    <button type="button" onclick="closeModals()" class="bg-gray-300 hover:bg-gray-400 py-1 px-4 rounded text-sm">Cancelar</button>
-                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white py-1 px-4 rounded text-sm">Guardar</button>
+                    <button type="button" onclick="closeModals()" class="bg-gray-300 hover:bg-gray-400 py-1.5 px-4 rounded">Cancelar</button>
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white py-1.5 px-4 rounded font-medium">Guardar</button>
                 </div>
             </form>
         </div>
     </div>
 
     <!-- Modal: Convocar Personal -->
-    <div id="modal-call" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
-        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
-            <h3 class="text-lg font-bold mb-4 text-orange-600"><i class="fas fa-bullhorn mr-2"></i>Convocar Personal</h3>
-            <form id="form-call" class="space-y-4">
+    <div id="modal-call" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50 p-4">
+        <div class="bg-white p-5 rounded-lg shadow-xl w-full max-w-md text-xs sm:text-sm">
+            <h3 class="text-base sm:text-lg font-bold mb-3 text-orange-600"><i class="fas fa-bullhorn mr-2"></i>Convocar Personal</h3>
+            <form id="form-call" class="space-y-3">
                 <div>
-                    <label class="block text-sm font-medium">Llamar a:</label>
-                    <select id="call-to" required class="mt-1 w-full border rounded py-2 px-3"></select>
+                    <label class="block font-medium">Llamar a:</label>
+                    <select id="call-to" required class="mt-1 w-full border rounded py-2 px-3 bg-white"></select>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium">Motivo / Solicitud</label>
+                    <label class="block font-medium">Motivo / Solicitud</label>
                     <textarea id="call-msg" required class="mt-1 w-full border rounded py-2 px-3" rows="3" placeholder="Ej: Ven a mi oficina para revisar el punto de cuenta..."></textarea>
                 </div>
                 <div class="flex justify-end gap-2 mt-4">
-                    <button type="button" onclick="closeModals()" class="bg-gray-300 hover:bg-gray-400 py-1 px-4 rounded text-sm">Cancelar</button>
-                    <button type="submit" class="bg-orange-500 hover:bg-orange-600 text-white py-1 px-4 rounded text-sm">Enviar Notificación</button>
+                    <button type="button" onclick="closeModals()" class="bg-gray-300 hover:bg-gray-400 py-1.5 px-4 rounded">Cancelar</button>
+                    <button type="submit" class="bg-orange-500 hover:bg-orange-600 text-white py-1.5 px-4 rounded font-medium">Enviar Notificación</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Enlace a JavaScript externo como módulo ES -->
     <script type="module" src="script.js"></script>
 </body>
 </html>

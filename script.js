@@ -1,6 +1,5 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
-// Configuración de Supabase
 const SUPABASE_URL = 'https://cupvbdtltmfoxyupxcne.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_CctZKBC4P7dtXLHs1D-mow_VGKRG9iG';
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -60,7 +59,7 @@ window.logout = function() {
 function startApp() {
     hideAllViews();
     document.getElementById('navbar').classList.remove('hidden');
-    document.getElementById('user-info').innerHTML = `<i class="fas fa-user mr-1"></i> ${currentUser.name} <span class="bg-blue-700 px-2 py-0.5 rounded text-xs ml-1">${currentUser.role.toUpperCase()}</span>`;
+    document.getElementById('user-info').innerHTML = `<i class="fas fa-user mr-1"></i> ${currentUser.name} <span class="bg-blue-700 px-2 py-0.5 rounded text-[10px] ml-1">${currentUser.role.toUpperCase()}</span>`;
 
     const btnAdmin = document.getElementById('btn-admin-panel');
     if (currentUser.role === 'admin') {
@@ -71,7 +70,8 @@ function startApp() {
     }
 
     showDashboard();
-    listenRealtimeCalls();
+    listenRealtimeNotifications();
+    fetchNotifications();
 }
 
 // --- NAVEGACIÓN ---
@@ -114,27 +114,27 @@ async function renderDirecciones() {
         const enProgreso = dirTasks.filter(t => t.status === 'Pendiente' || t.status === 'En Proceso').length;
 
         return `
-            <div onclick="openDireccion('${dir}')" class="bg-white p-5 rounded-lg shadow border-l-4 border-blue-900 cursor-pointer hover:shadow-lg transition flex flex-col justify-between">
+            <div onclick="openDireccion('${dir}')" class="bg-white p-4 rounded-lg shadow border-l-4 border-blue-900 cursor-pointer hover:shadow-lg transition flex flex-col justify-between">
                 <div>
-                    <div class="flex items-center gap-3 mb-3">
-                        <div class="bg-blue-100 text-blue-900 rounded-full w-8 h-8 flex items-center justify-center font-bold text-sm">
+                    <div class="flex items-center gap-3 mb-2">
+                        <div class="bg-blue-100 text-blue-900 rounded-full w-7 h-7 flex items-center justify-center font-bold text-xs">
                             ${index + 1}
                         </div>
-                        <h3 class="text-sm font-bold text-gray-800 leading-tight">${dir}</h3>
+                        <h3 class="text-xs sm:text-sm font-bold text-gray-800 leading-tight">${dir}</h3>
                     </div>
                 </div>
-                <div class="grid grid-cols-3 gap-2 mt-2 pt-3 border-t text-center text-xs">
-                    <div class="bg-gray-50 p-2 rounded">
+                <div class="grid grid-cols-3 gap-1.5 mt-2 pt-2 border-t text-center text-[11px]">
+                    <div class="bg-gray-50 p-1.5 rounded">
                         <span class="block text-gray-500 font-medium">Total</span>
-                        <span class="text-sm font-bold text-gray-800">${total}</span>
+                        <span class="text-xs font-bold text-gray-800">${total}</span>
                     </div>
-                    <div class="bg-yellow-50 p-2 rounded">
+                    <div class="bg-yellow-50 p-1.5 rounded">
                         <span class="block text-yellow-700 font-medium">Pendientes</span>
-                        <span class="text-sm font-bold text-yellow-800">${enProgreso}</span>
+                        <span class="text-xs font-bold text-yellow-800">${enProgreso}</span>
                     </div>
-                    <div class="bg-green-50 p-2 rounded">
+                    <div class="bg-green-50 p-1.5 rounded">
                         <span class="block text-green-700 font-medium">Listas</span>
-                        <span class="text-sm font-bold text-green-800">${completadas}</span>
+                        <span class="text-xs font-bold text-green-800">${completadas}</span>
                     </div>
                 </div>
             </div>
@@ -160,7 +160,7 @@ async function renderTasks() {
     const tbody = document.getElementById('tasks-tbody');
     
     if (!tasks || tasks.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">No hay tareas registradas en esta dirección.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4" class="px-4 py-4 text-center text-gray-500">No hay tareas registradas en esta dirección.</td></tr>`;
         return;
     }
 
@@ -174,29 +174,29 @@ async function renderTasks() {
 
         return `
         <tr>
-            <td class="px-6 py-4 text-sm text-gray-900">
-                <div class="w-56 font-semibold break-words">${t.description}</div>
+            <td class="px-4 py-3 text-xs sm:text-sm text-gray-900">
+                <div class="w-48 sm:w-56 font-semibold break-words">${t.description}</div>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+            <td class="px-4 py-3 whitespace-nowrap text-xs text-gray-900">
                 <div><i class="fas fa-user-circle text-gray-400 mr-1"></i>${t.assigned_to_name}</div>
-                <div class="text-xs text-gray-500 mt-1"><i class="far fa-calendar-alt text-gray-400 mr-1"></i>Límite: ${t.due_date}</div>
+                <div class="text-[11px] text-gray-500 mt-0.5"><i class="far fa-calendar-alt text-gray-400 mr-1"></i>Límite: ${t.due_date}</div>
             </td>
-            <td class="px-6 py-4 text-sm text-gray-700">
-                <div class="text-xs bg-gray-50 p-2 rounded border mb-1 max-w-xs truncate">
+            <td class="px-4 py-3 text-xs text-gray-700">
+                <div class="text-[11px] bg-gray-50 p-1.5 rounded border mb-1 max-w-xs truncate">
                     <b>Último avance:</b> ${lastNoteText}
                 </div>
                 <button onclick="openTaskHistory('${t.id}')" class="text-xs text-blue-700 hover:text-blue-900 font-bold underline">
-                    <i class="fas fa-history mr-1"></i> Ver/Añadir Bitácora (${historyArr.length})
+                    <i class="fas fa-comments mr-1"></i> Ver/Añadir Bitácora (${historyArr.length})
                 </button>
             </td>
-            <td class="px-6 py-4 text-sm">
-                <select onchange="updateTaskStatus('${t.id}', this.value)" class="${statusColor} rounded px-2 py-1 text-xs font-bold border-none outline-none cursor-pointer mb-2">
+            <td class="px-4 py-3 text-xs">
+                <select onchange="updateTaskStatus('${t.id}', this.value)" class="${statusColor} rounded px-2 py-1 text-xs font-bold border-none outline-none cursor-pointer mb-1">
                     <option value="Pendiente" ${t.status === 'Pendiente' ? 'selected' : ''}>Pendiente</option>
                     <option value="En Proceso" ${t.status === 'En Proceso' ? 'selected' : ''}>En Proceso</option>
                     <option value="Completado" ${t.status === 'Completado' ? 'selected' : ''}>Completado</option>
                 </select>
-                <div class="text-xs text-gray-500 mt-1">
-                    <b>Última mod.:</b><br>${t.last_modified_by}
+                <div class="text-[10px] text-gray-500">
+                    <b>Última mod.:</b> ${t.last_modified_by}
                 </div>
             </td>
         </tr>
@@ -226,6 +226,18 @@ document.getElementById('form-task').addEventListener('submit', async (e) => {
     };
 
     await supabase.from('tasks').insert([newTask]);
+
+    // Notificación de nueva tarea
+    await supabase.from('notifications').insert([{
+        id: 'notif_' + Date.now(),
+        to_id: selectResp.value,
+        from_name: currentUser.name,
+        title: `Nueva Tarea Asignada`,
+        message: `${currentUser.name} te asignó: "${newTask.description}"`,
+        task_id: newTask.id,
+        read: false
+    }]);
+
     closeModals();
     await renderTasks();
     Swal.fire('Guardado', 'Tarea asignada correctamente.', 'success');
@@ -236,28 +248,29 @@ window.openTaskHistory = async function(taskId) {
     if (!task) return;
 
     const historyHtml = (task.history || []).map(h => `
-        <div class="text-left bg-gray-50 p-3 rounded mb-2 border-l-4 border-blue-800 shadow-sm">
-            <div class="flex justify-between text-xs text-gray-500 mb-1">
+        <div class="text-left bg-gray-50 p-2.5 rounded mb-2 border-l-4 border-blue-800 shadow-sm text-xs">
+            <div class="flex justify-between text-[11px] text-gray-500 mb-1">
                 <span class="font-bold text-blue-900"><i class="fas fa-user text-gray-400 mr-1"></i>${h.user}</span>
                 <span>${h.timestamp}</span>
             </div>
-            <p class="text-sm text-gray-800 leading-snug">${h.note}</p>
+            <p class="text-xs text-gray-800 leading-relaxed">${h.note}</p>
         </div>
     `).join('');
 
     Swal.fire({
         title: 'Historial y Avances',
         html: `
-            <div class="text-left text-xs mb-3 font-semibold text-gray-600">Tarea: ${task.description}</div>
-            <div class="max-h-56 overflow-y-auto mb-4 p-2 bg-gray-100 rounded border">${historyHtml}</div>
+            <div class="text-left text-xs mb-2 font-semibold text-gray-600 truncate">Tarea: ${task.description}</div>
+            <div class="max-h-48 overflow-y-auto mb-3 p-2 bg-gray-100 rounded border">${historyHtml || '<div class="text-center text-gray-400 text-xs">Sin registros.</div>'}</div>
             <div class="text-left">
-                <label class="block text-xs font-bold text-gray-700 mb-1">Agregar Nuevo Avance:</label>
-                <textarea id="swal-advance-note" class="w-full border rounded p-2 text-sm" rows="3" placeholder="Escriba el avance..."></textarea>
+                <label class="block text-xs font-bold text-gray-700 mb-1">Nuevo Comentario / Avance:</label>
+                <textarea id="swal-advance-note" class="w-full border rounded p-2 text-xs" rows="3" placeholder="Escriba los detalles del avance..."></textarea>
             </div>
         `,
         showCancelButton: true,
         confirmButtonText: 'Guardar Avance',
         confirmButtonColor: '#1e3a8a',
+        cancelButtonText: 'Cerrar',
         preConfirm: () => {
             const note = document.getElementById('swal-advance-note').value.trim();
             if (!note) {
@@ -281,8 +294,19 @@ window.openTaskHistory = async function(taskId) {
                 .update({ history: updatedHistory, last_modified_by: currentUser.name })
                 .eq('id', taskId);
 
+            // Emitir Alerta de Avance a los involucrados
+            await supabase.from('notifications').insert([{
+                id: 'notif_' + Date.now(),
+                to_id: task.assigned_to_id,
+                from_name: currentUser.name,
+                title: `Nuevo Avance de Tarea`,
+                message: `${currentUser.name} agregó un avance a "${task.description.substring(0, 30)}...": ${result.value.substring(0, 40)}...`,
+                task_id: taskId,
+                read: false
+            }]);
+
             await renderTasks();
-            Swal.fire('Registrado', 'Avance guardado.', 'success');
+            Swal.fire('Registrado', 'El avance fue publicado.', 'success');
         }
     });
 };
@@ -313,7 +337,7 @@ async function renderMeetings() {
     const tbody = document.getElementById('meetings-tbody');
 
     if (!meetings || meetings.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">No hay reuniones agendadas.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4" class="px-4 py-4 text-center text-gray-500">No hay reuniones agendadas.</td></tr>`;
         return;
     }
 
@@ -322,37 +346,37 @@ async function renderMeetings() {
                           m.status === 'Realizada' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
 
         const dirsBadges = (m.direcciones || []).map(d => 
-            `<span class="inline-block bg-purple-100 text-purple-800 text-[10px] font-semibold px-2 py-0.5 rounded mr-1 mb-1 border border-purple-200">${d}</span>`
+            `<span class="inline-block bg-purple-100 text-purple-800 text-[10px] font-semibold px-1.5 py-0.5 rounded mr-1 mb-1 border border-purple-200">${d}</span>`
         ).join('');
 
         const reqsHtml = m.requirements ? 
-            `<div class="text-xs text-amber-900 bg-amber-50 p-2 rounded border border-amber-200 mt-2">
-                <b><i class="fas fa-folder-open mr-1"></i>Requerido:</b> ${m.requirements}
+            `<div class="text-[11px] text-amber-900 bg-amber-50 p-1.5 rounded border border-amber-200 mt-1">
+                <b>Requerido:</b> ${m.requirements}
              </div>` : '';
 
         return `
             <tr>
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
+                <td class="px-4 py-3 whitespace-nowrap text-xs font-bold text-gray-900">
                     <div><i class="far fa-calendar text-purple-700 mr-1"></i>${m.date}</div>
-                    <div class="text-xs text-gray-500 font-normal"><i class="far fa-clock mr-1"></i>${m.time}</div>
+                    <div class="text-[11px] text-gray-500 font-normal"><i class="far fa-clock mr-1"></i>${m.time}</div>
                 </td>
-                <td class="px-6 py-4 text-sm text-gray-900">
-                    <div class="font-bold text-base text-gray-800">${m.title}</div>
-                    <div class="text-xs text-gray-600 mt-1 max-w-sm"><b>Orden del día:</b> ${m.agenda}</div>
+                <td class="px-4 py-3 text-xs text-gray-900">
+                    <div class="font-bold text-sm text-gray-800">${m.title}</div>
+                    <div class="text-[11px] text-gray-600 mt-0.5 max-w-xs"><b>Orden del día:</b> ${m.agenda}</div>
                     ${reqsHtml}
                 </td>
-                <td class="px-6 py-4 text-sm text-gray-900">
+                <td class="px-4 py-3 text-xs text-gray-900">
                     <div class="max-w-xs flex flex-wrap mb-1">${dirsBadges}</div>
-                    <div class="text-[11px] text-gray-400">Agendado por: ${m.created_by}</div>
+                    <div class="text-[10px] text-gray-400">Por: ${m.created_by}</div>
                 </td>
-                <td class="px-6 py-4 text-sm">
-                    <select onchange="updateMeetingStatus('${m.id}', this.value)" class="${statusBadge} rounded px-2 py-1 text-xs font-bold border-none outline-none cursor-pointer mb-2">
+                <td class="px-4 py-3 text-xs">
+                    <select onchange="updateMeetingStatus('${m.id}', this.value)" class="${statusBadge} rounded px-2 py-1 text-xs font-bold border-none outline-none cursor-pointer mb-1">
                         <option value="Programada" ${m.status === 'Programada' ? 'selected' : ''}>Programada</option>
                         <option value="Realizada" ${m.status === 'Realizada' ? 'selected' : ''}>Realizada</option>
                         <option value="Cancelada" ${m.status === 'Cancelada' ? 'selected' : ''}>Cancelada</option>
                     </select>
                     <br>
-                    <button onclick="openMeetingDetails('${m.id}')" class="text-xs text-purple-800 font-bold underline mt-1">
+                    <button onclick="openMeetingDetails('${m.id}')" class="text-xs text-purple-800 font-bold underline">
                         <i class="fas fa-file-alt mr-1"></i> Minuta
                     </button>
                 </td>
@@ -398,7 +422,7 @@ document.getElementById('form-meeting').addEventListener('submit', async (e) => 
     await supabase.from('meetings').insert([newMeeting]);
     closeModals();
     await renderMeetings();
-    Swal.fire('Agendada', 'La reunión se guardó en la base de datos.', 'success');
+    Swal.fire('Agendada', 'Reunión registrada.', 'success');
 });
 
 window.updateMeetingStatus = async function(meetId, status) {
@@ -417,7 +441,7 @@ window.openMeetingDetails = async function(meetId) {
             <div class="text-left text-xs mb-3"><b>Orden del día:</b> ${meeting.agenda}</div>
             <div class="text-left">
                 <label class="block text-xs font-bold text-gray-700 mb-1">Acuerdos / Minuta:</label>
-                <textarea id="swal-minuta" class="w-full border rounded p-2 text-sm" rows="4">${meeting.minuta || ''}</textarea>
+                <textarea id="swal-minuta" class="w-full border rounded p-2 text-xs" rows="4">${meeting.minuta || ''}</textarea>
             </div>
         `,
         showCancelButton: true,
@@ -433,72 +457,84 @@ window.openMeetingDetails = async function(meetId) {
     });
 };
 
-// --- TIEMPO REAL (NOTIFICACIONES/LLAMADOS) ---
-function listenRealtimeCalls() {
+// --- ALERTAS EN TIEMPO REAL ---
+function listenRealtimeNotifications() {
     supabase
-        .channel('calls-channel')
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'calls' }, payload => {
-            const newCall = payload.new;
-            if (newCall.to_id === currentUser.id) {
+        .channel('alerts-channel')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' }, payload => {
+            const notif = payload.new;
+            if (!notif.to_id || notif.to_id === currentUser.id || currentUser.role === 'admin' || currentUser.role === 'director') {
                 Swal.fire({
-                    title: '¡Llamado del Director!',
-                    text: `${newCall.from_name} te solicita: "${newCall.message}"`,
-                    icon: 'warning',
-                    confirmButtonText: 'Entendido'
+                    title: notif.title,
+                    text: notif.message,
+                    icon: 'info',
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 5000
                 });
-                fetchUnreadCalls();
+                fetchNotifications();
             }
         })
         .subscribe();
-
-    fetchUnreadCalls();
 }
 
-async function fetchUnreadCalls() {
+async function fetchNotifications() {
     if (!currentUser) return;
-    const { data: calls } = await supabase
-        .from('calls')
+    
+    const { data: notifs } = await supabase
+        .from('notifications')
         .select('*')
-        .eq('to_id', currentUser.id)
-        .eq('read', false);
+        .order('created_at', { ascending: false })
+        .limit(10);
 
     const badge = document.getElementById('notif-badge');
-    if (calls && calls.length > 0) {
-        badge.innerText = calls.length;
+    const list = document.getElementById('notif-list');
+
+    const unread = (notifs || []).filter(n => !n.read && (n.to_id === currentUser.id || !n.to_id));
+    
+    if (unread.length > 0) {
+        badge.innerText = unread.length;
         badge.classList.remove('hidden');
     } else {
         badge.classList.add('hidden');
     }
+
+    if (!notifs || notifs.length === 0) {
+        list.innerHTML = `<div class="p-3 text-center text-gray-400">Sin notificaciones</div>`;
+        return;
+    }
+
+    list.innerHTML = notifs.map(n => `
+        <div class="p-2.5 ${n.read ? 'bg-white' : 'bg-blue-50'} hover:bg-gray-100 cursor-pointer transition" onclick="markNotificationRead('${n.id}', '${n.task_id}')">
+            <div class="flex justify-between items-center mb-1">
+                <span class="font-bold text-blue-900 text-xs">${n.title}</span>
+                <span class="text-[9px] text-gray-400">${n.from_name}</span>
+            </div>
+            <div class="text-xs text-gray-700 leading-snug">${n.message}</div>
+        </div>
+    `).join('');
 }
 
-document.getElementById('form-call').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const selectTo = document.getElementById('call-to');
+window.markNotificationRead = async function(notifId, taskId) {
+    await supabase.from('notifications').update({ read: true }).eq('id', notifId);
+    fetchNotifications();
 
-    const newCall = {
-        id: 'call_' + Date.now(),
-        from_id: currentUser.id,
-        from_name: currentUser.name,
-        to_id: selectTo.value,
-        to_name: selectTo.options[selectTo.selectedIndex].text,
-        message: document.getElementById('call-msg').value,
-        direccion_context: currentDireccion,
-        timestamp: new Date().toLocaleString(),
-        read: false
-    };
+    if (taskId && taskId !== 'null' && taskId !== 'undefined') {
+        openTaskHistory(taskId);
+    }
+};
 
-    await supabase.from('calls').insert([newCall]);
-    closeModals();
-    Swal.fire('Enviado', `Se envió la alerta a ${newCall.to_name}.`, 'success');
-});
+window.toggleNotifications = function() {
+    document.getElementById('notif-dropdown').classList.toggle('hidden');
+};
 
 // --- AUXILIARES ---
 async function populateUserSelects() {
     const { data: users } = await supabase
         .from('users')
         .select('*')
-        .neq('id', currentUser.id)
-        .neq('role', 'admin');
+        .neq('id', currentUser.id);
 
     const options = (users || []).map(u => `<option value="${u.id}">${u.name} (${u.role})</option>`).join('');
     document.getElementById('task-resp').innerHTML = options;
@@ -515,7 +551,7 @@ document.getElementById('register-form').addEventListener('submit', async (e) =>
     const newUser = { id: 'usr_' + Date.now(), name, email, password, role };
     await supabase.from('users').insert([newUser]);
     
-    Swal.fire('Éxito', `Usuario ${name} registrado en Supabase.`, 'success');
+    Swal.fire('Éxito', `Usuario ${name} registrado.`, 'success');
     document.getElementById('register-form').reset();
     renderUsersTable();
 });
@@ -525,10 +561,10 @@ async function renderUsersTable() {
     const tbody = document.getElementById('users-table-body');
     tbody.innerHTML = (users || []).map(u => `
         <tr>
-            <td class="px-6 py-4 text-sm font-medium text-gray-900">${u.name}</td>
-            <td class="px-6 py-4 text-sm text-gray-500">${u.email}</td>
-            <td class="px-6 py-4 text-sm text-gray-500">
-                <span class="px-2 py-1 rounded text-xs font-bold ${u.role === 'admin' ? 'bg-yellow-200 text-yellow-800' : u.role === 'director' ? 'bg-blue-200 text-blue-800' : 'bg-green-200 text-green-800'}">${u.role.toUpperCase()}</span>
+            <td class="px-4 py-3 text-xs font-medium text-gray-900">${u.name}</td>
+            <td class="px-4 py-3 text-xs text-gray-500">${u.email}</td>
+            <td class="px-4 py-3 text-xs text-gray-500">
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold ${u.role === 'admin' ? 'bg-yellow-200 text-yellow-800' : u.role === 'director' ? 'bg-blue-200 text-blue-800' : 'bg-green-200 text-green-800'}">${u.role.toUpperCase()}</span>
             </td>
         </tr>
     `).join('');

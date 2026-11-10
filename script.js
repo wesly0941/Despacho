@@ -74,7 +74,7 @@ function startApp() {
     fetchNotifications();
 }
 
-// --- NAVEGACIÓN ---
+// --- NAVEGACIÓN Y CONTROL DE VISTAS ---
 function hideAllViews() {
     document.getElementById('view-login').classList.add('hidden');
     document.getElementById('view-admin').classList.add('hidden');
@@ -91,10 +91,10 @@ window.showDashboard = function() {
     document.getElementById('view-dashboard').classList.remove('hidden');
 };
 
-window.showNovedades = function() {
+window.showNovedades = async function() {
     hideAllViews();
-    renderNovedades();
     document.getElementById('view-novedades').classList.remove('hidden');
+    await renderNovedades();
 };
 
 window.showAgenda = function() {
@@ -108,6 +108,123 @@ function showAdminPanel() {
     document.getElementById('view-admin').classList.remove('hidden');
     renderUsersTable();
 }
+
+// --- PANEL DE NOVEDADES INTEGRADO ---
+async function renderNovedades() {
+    // 1. Estatus y Avances Recientes
+    const { data: notifs } = await supabase
+        .from('notifications')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+    const estatusContainer = document.getElementById('novedades-estatus-container');
+    if (!notifs || notifs.length === 0) {
+        estatusContainer.innerHTML = `<div class="p-4 text-center text-gray-400 text-xs">Sin cambios ni estatus recientes.</div>`;
+    } else {
+        estatusContainer.innerHTML = notifs.map(n => `
+            <div class="p-3 ${n.read ? 'bg-white' : 'bg-amber-50'} hover:bg-gray-50 flex justify-between items-start transition text-xs">
+                <div class="space-y-0.5">
+                    <div class="flex items-center gap-2">
+                        <span class="font-bold text-blue-900">${n.title}</span>
+                        ${!n.read ? '<span class="bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.2 rounded">Sin Revisar</span>' : ''}
+                    </div>
+                    <p class="text-gray-800">${n.message}</p>
+                    <div class="text-[10px] text-gray-400"><i class="fas fa-user mr-1"></i>${n.from_name} • ${new Date(n.created_at).toLocaleString()}</div>
+                </div>
+                ${n.task_id ? `<button onclick="openTaskHistory('${n.task_id}')" class="bg-blue-900 text-white text-[11px] px-2.5 py-1 rounded hover:bg-blue-800"><i class="fas fa-eye mr-1"></i>Ver</button>` : ''}
+            </div>
+        `).join('');
+    }
+
+    // 2. Tareas Próximas a la Fecha Límite
+    const { data: tasks } = await supabase
+        .from('tasks')
+        .select('*')
+        .neq('status', 'Completado');
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const tareasProximas = (tasks || []).map(t => {
+        const dueDate = new Date(t.due_date + 'T00:00:00');
+        const diffDays = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+        return { ...t, diffDays };
+    }).sort((a, b) => a.diffDays - b.diffDays);
+
+    const tareasContainer = document.getElementById('novedades-proximas-tareas-container');
+    if (tareasProximas.length === 0) {
+        tareasContainer.innerHTML = `<div class="p-4 text-center text-gray-400 text-xs">No hay tareas pendientes en el sistema.</div>`;
+    } else {
+        tareasContainer.innerHTML = tareasProximas.map(t => {
+            let badgeColor = "bg-blue-100 text-blue-800";
+            let badgeText = `Vence en ${t.diffDays} días`;
+
+            if (t.diffDays < 0) {
+                badgeColor = "bg-red-100 text-red-800 font-bold";
+                badgeText = `Vencida (${Math.abs(t.diffDays)} días de retraso)`;
+            } else if (t.diffDays === 0) {
+                badgeColor = "bg-orange-100 text-orange-800 font-bold";
+                badgeText = "Vence Hoy";
+            } else if (t.diffDays <= 3) {
+                badgeColor = "bg-yellow-100 text-yellow-800 font-bold";
+                badgeText = `Urgente (${t.diffDays} días)`;
+            }
+
+            return `
+                <div class="p-3 bg-white hover:bg-gray-50 flex justify-between items-center text-xs">
+                    <div>
+                        <span class="font-bold text-gray-800 block text-sm mb-0.5">${t.description}</span>
+                        <span class="text-gray-500 text-[11px]"><i class="fas fa-building text-blue-900 mr-1"></i>${t.direccion} • <i class="fas fa-user text-gray-400 mr-1"></i>${t.assigned_to_name}</span>
+                    </div>
+                    <div class="text-right flex flex-col items-end gap-1">
+                        <span class="px-2 py-0.5 rounded text-[10px] ${badgeColor}">${badgeText}</span>
+                        <span class="text-[10px] text-gray-400"><i class="far fa-calendar-alt mr-1"></i>Límite: ${t.due_date}</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // 3. Agenda de Reuniones Ordenadas por Fecha y Hora
+    const { data: meetings } = await supabase.from('meetings').select('*');
+
+    const reunionesOrdenadas = (meetings || []).sort((a, b) => {
+        return new Date(`${a.date}T${a.time}`) - new Date(`${b.date}T${b.time}`);
+    });
+
+    const reunionesContainer = document.getElementById('novedades-reuniones-container');
+    if (reunionesOrdenadas.length === 0) {
+        reunionesContainer.innerHTML = `<div class="p-4 text-center text-gray-400 text-xs">No hay reuniones agendadas.</div>`;
+    } else {
+        reunionesContainer.innerHTML = reunionesOrdenadas.map(m => {
+            const dirsBadges = (m.direcciones || []).map(d => `<span class="bg-purple-100 text-purple-800 text-[10px] font-semibold px-1.5 py-0.5 rounded border border-purple-200 mr-1">${d}</span>`).join('');
+            
+            return `
+                <div class="p-3 bg-white hover:bg-gray-50 flex justify-between items-start text-xs">
+                    <div>
+                        <div class="font-bold text-purple-900 text-sm mb-1">${m.title}</div>
+                        <div class="text-gray-600 mb-1"><b>Orden del día:</b> ${m.agenda}</div>
+                        ${m.requirements ? `<div class="text-[11px] text-amber-900 bg-amber-50 p-1.5 rounded border border-amber-200 mb-1"><b>Insumos Requeridos:</b> ${m.requirements}</div>` : ''}
+                        <div class="flex flex-wrap gap-1 mt-1">${dirsBadges}</div>
+                    </div>
+                    <div class="text-right whitespace-nowrap ml-3">
+                        <div class="font-bold text-purple-800"><i class="far fa-calendar mr-1"></i>${m.date}</div>
+                        <div class="text-gray-500 text-[11px]"><i class="far fa-clock mr-1"></i>${m.time}</div>
+                        <span class="inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-bold ${m.status === 'Programada' ? 'bg-purple-100 text-purple-800' : 'bg-green-100 text-green-800'}">${m.status}</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+}
+
+window.markAllNovedadesRead = async function() {
+    await supabase.from('notifications').update({ read: true }).neq('read', true);
+    await renderNovedades();
+    await fetchNotifications();
+    Swal.fire('Completado', 'Novedades marcadas como revisadas.', 'success');
+};
 
 // --- DIRECCIONES Y TAREAS ---
 async function renderDirecciones() {
@@ -234,13 +351,12 @@ document.getElementById('form-task').addEventListener('submit', async (e) => {
 
     await supabase.from('tasks').insert([newTask]);
 
-    // Notificación automática
     await supabase.from('notifications').insert([{
         id: 'notif_' + Date.now(),
         to_id: selectResp.value,
         from_name: currentUser.name,
         title: `Nueva Tarea Asignada`,
-        message: `${currentUser.name} te asignó: "${newTask.description}"`,
+        message: `${currentUser.name} asignó: "${newTask.description}"`,
         task_id: newTask.id,
         read: false
     }]);
@@ -301,10 +417,9 @@ window.openTaskHistory = async function(taskId) {
                 .update({ history: updatedHistory, last_modified_by: currentUser.name })
                 .eq('id', taskId);
 
-            // Emitir Notificación del Comentario
             await supabase.from('notifications').insert([{
                 id: 'notif_' + Date.now(),
-                to_id: null, // Visibilidad global para Director y Analistas
+                to_id: null,
                 from_name: currentUser.name,
                 title: `Nuevo Avance en ${task.direccion}`,
                 message: `${currentUser.name} comentó en "${task.description.substring(0, 30)}...": ${result.value}`,
@@ -318,7 +433,6 @@ window.openTaskHistory = async function(taskId) {
     });
 };
 
-// --- CAMBIO DE ESTATUS CON ALERTA AUTOMÁTICA ---
 window.updateTaskStatus = async function(taskId, newStatus) {
     const { data: task } = await supabase.from('tasks').select('*').eq('id', taskId).single();
     if (!task) return;
@@ -337,7 +451,6 @@ window.updateTaskStatus = async function(taskId, newStatus) {
         .update({ status: newStatus, last_modified_by: currentUser.name, history: updatedHistory })
         .eq('id', taskId);
 
-    // Enviar Alerta en Tiempo Real al Cambiar Estatus
     await supabase.from('notifications').insert([{
         id: 'notif_' + Date.now(),
         to_id: null,
@@ -349,41 +462,6 @@ window.updateTaskStatus = async function(taskId, newStatus) {
     }]);
 
     await renderTasks();
-};
-
-// --- SECTOR DE NOVEDADES Y NO REVISADOS ---
-async function renderNovedades() {
-    const container = document.getElementById('novedades-container');
-    const { data: notifs } = await supabase
-        .from('notifications')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-    if (!notifs || notifs.length === 0) {
-        container.innerHTML = `<div class="p-6 text-center text-gray-400 text-sm">No hay novedades ni cambios de estatus registrados.</div>`;
-        return;
-    }
-
-    container.innerHTML = notifs.map(n => `
-        <div class="p-3.5 ${n.read ? 'bg-white' : 'bg-amber-50'} hover:bg-gray-50 flex justify-between items-start transition">
-            <div class="space-y-1">
-                <div class="flex items-center gap-2">
-                    <span class="font-bold text-xs sm:text-sm text-blue-900">${n.title}</span>
-                    ${!n.read ? '<span class="bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.2 rounded">Sin Revisar</span>' : '<span class="bg-gray-200 text-gray-600 text-[9px] px-1.5 py-0.2 rounded">Revisado</span>'}
-                </div>
-                <p class="text-xs sm:text-sm text-gray-800">${n.message}</p>
-                <div class="text-[10px] text-gray-400"><i class="fas fa-user mr-1"></i>${n.from_name} • ${new Date(n.created_at).toLocaleString()}</div>
-            </div>
-            ${n.task_id ? `<button onclick="openTaskHistory('${n.task_id}')" class="bg-blue-900 text-white text-xs px-2.5 py-1 rounded hover:bg-blue-800 transition"><i class="fas fa-eye mr-1"></i> Revisar</button>` : ''}
-        </div>
-    `).join('');
-}
-
-window.markAllNovedadesRead = async function() {
-    await supabase.from('notifications').update({ read: true }).neq('read', true);
-    await renderNovedades();
-    await fetchNotifications();
-    Swal.fire('Completado', 'Todas las novedades han sido marcadas como revisadas.', 'success');
 };
 
 // --- AGENDA DE REUNIONES ---
@@ -512,7 +590,7 @@ window.openMeetingDetails = async function(meetId) {
     });
 };
 
-// --- ESCUCHA DE ALERTAS EN TIEMPO REAL Y CONTADORES ---
+// --- TIEMPO REAL Y NOTIFICACIONES ---
 function listenRealtimeNotifications() {
     supabase
         .channel('schema-db-changes')
@@ -542,35 +620,40 @@ async function fetchNotifications() {
 
     const unread = (notifs || []).filter(n => !n.read);
     
-    // Actualizar badges
     const badge = document.getElementById('notif-badge');
     const novBadge = document.getElementById('novedades-badge');
 
     if (unread.length > 0) {
-        badge.innerText = unread.length;
-        badge.classList.remove('hidden');
-        novBadge.innerText = unread.length;
-        novBadge.classList.remove('hidden');
+        if (badge) {
+            badge.innerText = unread.length;
+            badge.classList.remove('hidden');
+        }
+        if (novBadge) {
+            novBadge.innerText = unread.length;
+            novBadge.classList.remove('hidden');
+        }
     } else {
-        badge.classList.add('hidden');
-        novBadge.classList.add('hidden');
+        if (badge) badge.classList.add('hidden');
+        if (novBadge) novBadge.classList.add('hidden');
     }
 
     const list = document.getElementById('notif-list');
-    if (!notifs || notifs.length === 0) {
-        list.innerHTML = `<div class="p-3 text-center text-gray-400">Sin notificaciones</div>`;
-        return;
-    }
+    if (list) {
+        if (!notifs || notifs.length === 0) {
+            list.innerHTML = `<div class="p-3 text-center text-gray-400">Sin notificaciones</div>`;
+            return;
+        }
 
-    list.innerHTML = notifs.slice(0, 5).map(n => `
-        <div class="p-2.5 ${n.read ? 'bg-white' : 'bg-blue-50'} hover:bg-gray-100 cursor-pointer transition" onclick="showNovedades()">
-            <div class="flex justify-between items-center mb-1">
-                <span class="font-bold text-blue-900 text-xs">${n.title}</span>
-                <span class="text-[9px] text-gray-400">${n.from_name}</span>
+        list.innerHTML = notifs.slice(0, 5).map(n => `
+            <div class="p-2.5 ${n.read ? 'bg-white' : 'bg-blue-50'} hover:bg-gray-100 cursor-pointer transition" onclick="showNovedades()">
+                <div class="flex justify-between items-center mb-1">
+                    <span class="font-bold text-blue-900 text-xs">${n.title}</span>
+                    <span class="text-[9px] text-gray-400">${n.from_name}</span>
+                </div>
+                <div class="text-xs text-gray-700 leading-snug truncate">${n.message}</div>
             </div>
-            <div class="text-xs text-gray-700 leading-snug truncate">${n.message}</div>
-        </div>
-    `).join('');
+        `).join('');
+    }
 }
 
 window.toggleNotifications = function() {

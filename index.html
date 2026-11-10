@@ -150,23 +150,50 @@
         <div id="direcciones-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4"></div>
     </div>
 
-    <!-- Vista: Novedades y Cambios de Estatus (NUEVO SECTOR) -->
-    <div id="view-novedades" class="hidden p-3 sm:p-6 max-w-6xl mx-auto">
-        <div class="flex justify-between items-center mb-4 sm:mb-6">
+    <!-- Vista: Novedades Organizadas por Categorías -->
+    <div id="view-novedades" class="hidden p-3 sm:p-6 max-w-6xl mx-auto space-y-6">
+        
+        <!-- Encabezado -->
+        <div class="flex justify-between items-center">
             <div>
-                <h2 class="text-xl sm:text-2xl font-bold text-amber-900"><i class="fas fa-newspaper mr-2"></i>Panel de Novedades y Cambios de Estatus</h2>
-                <p class="text-xs sm:text-sm text-gray-500">Listado de modificaciones, cambios de estado y comentarios no revisados</p>
+                <h2 class="text-xl sm:text-2xl font-bold text-amber-900"><i class="fas fa-newspaper mr-2"></i>Panel de Novedades del Despacho</h2>
+                <p class="text-xs sm:text-sm text-gray-500">Resumen unificado de estatus, tareas críticas y agenda de reuniones</p>
             </div>
             <button onclick="markAllNovedadesRead()" class="bg-gray-700 hover:bg-gray-800 text-white font-semibold py-1.5 px-3 rounded text-xs sm:text-sm transition">
-                <i class="fas fa-check-double mr-1"></i> Marcar Todo como Revisado
+                <i class="fas fa-check-double mr-1"></i> Marcar Todo Visto
             </button>
         </div>
 
-        <div class="bg-white rounded-lg shadow overflow-hidden border border-amber-200">
-            <div id="novedades-container" class="divide-y divide-gray-100 p-2 sm:p-4">
-                <!-- Se llena dinámicamente con las novedades -->
+        <!-- 1. Estatus y Avances Actualizados -->
+        <div class="bg-white rounded-lg shadow border border-amber-200 overflow-hidden">
+            <div class="bg-amber-100 p-3 border-b border-amber-200 font-bold text-xs sm:text-sm text-amber-900 flex items-center">
+                <i class="fas fa-sync-alt mr-2"></i> Estatus y Avances Recientes
+            </div>
+            <div id="novedades-estatus-container" class="divide-y divide-gray-100">
+                <p class="text-xs text-gray-400 p-3">Cargando actualizaciones...</p>
             </div>
         </div>
+
+        <!-- 2. Tareas Próximas a la Fecha Límite -->
+        <div class="bg-white rounded-lg shadow border border-blue-200 overflow-hidden">
+            <div class="bg-blue-100 p-3 border-b border-blue-200 font-bold text-xs sm:text-sm text-blue-900 flex items-center">
+                <i class="fas fa-hourglass-half mr-2"></i> Tareas Próximas a Vencer (Ordenadas por Urgencia)
+            </div>
+            <div id="novedades-proximas-tareas-container" class="divide-y divide-gray-100">
+                <p class="text-xs text-gray-400 p-3">Cargando pendientes...</p>
+            </div>
+        </div>
+
+        <!-- 3. Agenda de Reuniones por Fecha y Hora -->
+        <div class="bg-white rounded-lg shadow border border-purple-200 overflow-hidden">
+            <div class="bg-purple-100 p-3 border-b border-purple-200 font-bold text-xs sm:text-sm text-purple-900 flex items-center">
+                <i class="fas fa-calendar-alt mr-2"></i> Agenda de Reuniones (Orden Cronológico)
+            </div>
+            <div id="novedades-reuniones-container" class="divide-y divide-gray-100">
+                <p class="text-xs text-gray-400 p-3">Cargando agenda...</p>
+            </div>
+        </div>
+
     </div>
 
     <!-- Vista: Agenda de Reuniones -->

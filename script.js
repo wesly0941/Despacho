@@ -79,6 +79,7 @@ function hideAllViews() {
     document.getElementById('view-login').classList.add('hidden');
     document.getElementById('view-admin').classList.add('hidden');
     document.getElementById('view-dashboard').classList.add('hidden');
+    document.getElementById('view-novedades').classList.add('hidden');
     document.getElementById('view-agenda').classList.add('hidden');
     document.getElementById('view-tasks').classList.add('hidden');
     closeModals();
@@ -88,6 +89,12 @@ window.showDashboard = function() {
     hideAllViews();
     renderDirecciones();
     document.getElementById('view-dashboard').classList.remove('hidden');
+};
+
+window.showNovedades = function() {
+    hideAllViews();
+    renderNovedades();
+    document.getElementById('view-novedades').classList.remove('hidden');
 };
 
 window.showAgenda = function() {
@@ -227,7 +234,7 @@ document.getElementById('form-task').addEventListener('submit', async (e) => {
 
     await supabase.from('tasks').insert([newTask]);
 
-    // Notificación de nueva tarea
+    // Notificación automática
     await supabase.from('notifications').insert([{
         id: 'notif_' + Date.now(),
         to_id: selectResp.value,
@@ -294,13 +301,13 @@ window.openTaskHistory = async function(taskId) {
                 .update({ history: updatedHistory, last_modified_by: currentUser.name })
                 .eq('id', taskId);
 
-            // Emitir Alerta de Avance a los involucrados
+            // Emitir Notificación del Comentario
             await supabase.from('notifications').insert([{
                 id: 'notif_' + Date.now(),
-                to_id: task.assigned_to_id,
+                to_id: null, // Visibilidad global para Director y Analistas
                 from_name: currentUser.name,
-                title: `Nuevo Avance de Tarea`,
-                message: `${currentUser.name} agregó un avance a "${task.description.substring(0, 30)}...": ${result.value.substring(0, 40)}...`,
+                title: `Nuevo Avance en ${task.direccion}`,
+                message: `${currentUser.name} comentó en "${task.description.substring(0, 30)}...": ${result.value}`,
                 task_id: taskId,
                 read: false
             }]);
@@ -311,15 +318,17 @@ window.openTaskHistory = async function(taskId) {
     });
 };
 
+// --- CAMBIO DE ESTATUS CON ALERTA AUTOMÁTICA ---
 window.updateTaskStatus = async function(taskId, newStatus) {
     const { data: task } = await supabase.from('tasks').select('*').eq('id', taskId).single();
     if (!task) return;
 
+    const oldStatus = task.status;
     const updatedHistory = task.history || [];
     updatedHistory.push({
         timestamp: new Date().toLocaleString(),
         user: currentUser.name,
-        note: `Cambio de estado: de "${task.status}" a "${newStatus}".`,
+        note: `Cambio de estado: de "${oldStatus}" a "${newStatus}".`,
         status: newStatus
     });
 
@@ -328,7 +337,53 @@ window.updateTaskStatus = async function(taskId, newStatus) {
         .update({ status: newStatus, last_modified_by: currentUser.name, history: updatedHistory })
         .eq('id', taskId);
 
+    // Enviar Alerta en Tiempo Real al Cambiar Estatus
+    await supabase.from('notifications').insert([{
+        id: 'notif_' + Date.now(),
+        to_id: null,
+        from_name: currentUser.name,
+        title: `Estatus Actualizado en ${task.direccion}`,
+        message: `${currentUser.name} cambió la tarea "${task.description.substring(0, 35)}..." de "${oldStatus}" a "${newStatus}".`,
+        task_id: taskId,
+        read: false
+    }]);
+
     await renderTasks();
+};
+
+// --- SECTOR DE NOVEDADES Y NO REVISADOS ---
+async function renderNovedades() {
+    const container = document.getElementById('novedades-container');
+    const { data: notifs } = await supabase
+        .from('notifications')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+    if (!notifs || notifs.length === 0) {
+        container.innerHTML = `<div class="p-6 text-center text-gray-400 text-sm">No hay novedades ni cambios de estatus registrados.</div>`;
+        return;
+    }
+
+    container.innerHTML = notifs.map(n => `
+        <div class="p-3.5 ${n.read ? 'bg-white' : 'bg-amber-50'} hover:bg-gray-50 flex justify-between items-start transition">
+            <div class="space-y-1">
+                <div class="flex items-center gap-2">
+                    <span class="font-bold text-xs sm:text-sm text-blue-900">${n.title}</span>
+                    ${!n.read ? '<span class="bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.2 rounded">Sin Revisar</span>' : '<span class="bg-gray-200 text-gray-600 text-[9px] px-1.5 py-0.2 rounded">Revisado</span>'}
+                </div>
+                <p class="text-xs sm:text-sm text-gray-800">${n.message}</p>
+                <div class="text-[10px] text-gray-400"><i class="fas fa-user mr-1"></i>${n.from_name} • ${new Date(n.created_at).toLocaleString()}</div>
+            </div>
+            ${n.task_id ? `<button onclick="openTaskHistory('${n.task_id}')" class="bg-blue-900 text-white text-xs px-2.5 py-1 rounded hover:bg-blue-800 transition"><i class="fas fa-eye mr-1"></i> Revisar</button>` : ''}
+        </div>
+    `).join('');
+}
+
+window.markAllNovedadesRead = async function() {
+    await supabase.from('notifications').update({ read: true }).neq('read', true);
+    await renderNovedades();
+    await fetchNotifications();
+    Swal.fire('Completado', 'Todas las novedades han sido marcadas como revisadas.', 'success');
 };
 
 // --- AGENDA DE REUNIONES ---
@@ -457,24 +512,22 @@ window.openMeetingDetails = async function(meetId) {
     });
 };
 
-// --- ALERTAS EN TIEMPO REAL ---
+// --- ESCUCHA DE ALERTAS EN TIEMPO REAL Y CONTADORES ---
 function listenRealtimeNotifications() {
     supabase
-        .channel('alerts-channel')
+        .channel('schema-db-changes')
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' }, payload => {
             const notif = payload.new;
-            if (!notif.to_id || notif.to_id === currentUser.id || currentUser.role === 'admin' || currentUser.role === 'director') {
-                Swal.fire({
-                    title: notif.title,
-                    text: notif.message,
-                    icon: 'info',
-                    toast: true,
-                    position: 'top-end',
-                    showConfirmButton: false,
-                    timer: 5000
-                });
-                fetchNotifications();
-            }
+            Swal.fire({
+                title: notif.title,
+                text: notif.message,
+                icon: 'info',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 4000
+            });
+            fetchNotifications();
         })
         .subscribe();
 }
@@ -485,45 +538,40 @@ async function fetchNotifications() {
     const { data: notifs } = await supabase
         .from('notifications')
         .select('*')
-        .order('created_at', { ascending: false })
-        .limit(10);
+        .order('created_at', { ascending: false });
 
-    const badge = document.getElementById('notif-badge');
-    const list = document.getElementById('notif-list');
-
-    const unread = (notifs || []).filter(n => !n.read && (n.to_id === currentUser.id || !n.to_id));
+    const unread = (notifs || []).filter(n => !n.read);
     
+    // Actualizar badges
+    const badge = document.getElementById('notif-badge');
+    const novBadge = document.getElementById('novedades-badge');
+
     if (unread.length > 0) {
         badge.innerText = unread.length;
         badge.classList.remove('hidden');
+        novBadge.innerText = unread.length;
+        novBadge.classList.remove('hidden');
     } else {
         badge.classList.add('hidden');
+        novBadge.classList.add('hidden');
     }
 
+    const list = document.getElementById('notif-list');
     if (!notifs || notifs.length === 0) {
         list.innerHTML = `<div class="p-3 text-center text-gray-400">Sin notificaciones</div>`;
         return;
     }
 
-    list.innerHTML = notifs.map(n => `
-        <div class="p-2.5 ${n.read ? 'bg-white' : 'bg-blue-50'} hover:bg-gray-100 cursor-pointer transition" onclick="markNotificationRead('${n.id}', '${n.task_id}')">
+    list.innerHTML = notifs.slice(0, 5).map(n => `
+        <div class="p-2.5 ${n.read ? 'bg-white' : 'bg-blue-50'} hover:bg-gray-100 cursor-pointer transition" onclick="showNovedades()">
             <div class="flex justify-between items-center mb-1">
                 <span class="font-bold text-blue-900 text-xs">${n.title}</span>
                 <span class="text-[9px] text-gray-400">${n.from_name}</span>
             </div>
-            <div class="text-xs text-gray-700 leading-snug">${n.message}</div>
+            <div class="text-xs text-gray-700 leading-snug truncate">${n.message}</div>
         </div>
     `).join('');
 }
-
-window.markNotificationRead = async function(notifId, taskId) {
-    await supabase.from('notifications').update({ read: true }).eq('id', notifId);
-    fetchNotifications();
-
-    if (taskId && taskId !== 'null' && taskId !== 'undefined') {
-        openTaskHistory(taskId);
-    }
-};
 
 window.toggleNotifications = function() {
     document.getElementById('notif-dropdown').classList.toggle('hidden');

@@ -14,20 +14,25 @@
 </head>
 <body class="bg-gray-100 min-h-screen text-gray-800 font-sans">
 
-    <!-- Navbar Adaptable a Móvil -->
+    <!-- Navbar Adaptable -->
     <nav id="navbar" class="bg-blue-900 text-white p-2 sm:p-4 shadow-md hidden flex flex-wrap justify-between items-center z-50 relative gap-2">
         <div class="flex items-center gap-2">
             <i class="fas fa-building text-lg sm:text-2xl text-blue-200"></i>
             <h1 class="text-base sm:text-xl font-bold cursor-pointer truncate" onclick="showDashboard()">Despacho Central</h1>
         </div>
         
-        <div class="flex items-center gap-1.5 sm:gap-3 text-xs sm:text-sm flex-wrap">
+        <div class="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm flex-wrap">
             <span id="user-info" class="hidden md:inline font-medium text-gray-200 mr-2"></span>
             
             <button onclick="showDashboard()" class="bg-blue-800 hover:bg-blue-700 text-white font-semibold py-1 px-2 sm:px-3 rounded transition flex items-center gap-1">
                 <i class="fas fa-th-large"></i> <span class="hidden sm:inline">Direcciones</span>
             </button>
             
+            <button onclick="showNovedades()" class="bg-amber-600 hover:bg-amber-700 text-white font-semibold py-1 px-2 sm:px-3 rounded transition flex items-center gap-1 relative">
+                <i class="fas fa-newspaper"></i> <span>Novedades</span>
+                <span id="novedades-badge" class="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.2 rounded-full hidden">0</span>
+            </button>
+
             <button onclick="showAgenda()" class="bg-purple-700 hover:bg-purple-800 text-white font-semibold py-1 px-2 sm:px-3 rounded transition flex items-center gap-1">
                 <i class="fas fa-calendar-alt"></i> <span class="hidden sm:inline">Agenda</span>
             </button>
@@ -36,18 +41,17 @@
                 <i class="fas fa-cogs"></i> <span class="hidden sm:inline">Admin</span>
             </button>
 
-            <!-- Campana de Alertas / Comentarios -->
+            <!-- Campana de Alertas -->
             <div class="relative cursor-pointer px-1 py-1" onclick="toggleNotifications()">
                 <i class="fas fa-bell text-lg sm:text-xl text-yellow-300 hover:text-yellow-400 transition"></i>
                 <span id="notif-badge" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.2 rounded-full hidden">0</span>
                 
-                <!-- Panel Dropdown de Alertas -->
                 <div id="notif-dropdown" class="absolute right-0 mt-2 w-72 sm:w-80 bg-white text-gray-800 rounded shadow-xl border hidden z-50">
                     <div class="p-2 border-b font-bold text-xs sm:text-sm bg-gray-100 flex justify-between items-center">
-                        <span><i class="fas fa-bell text-yellow-600 mr-1"></i> Panel de Alertas y Comentarios</span>
+                        <span><i class="fas fa-bell text-yellow-600 mr-1"></i> Notificaciones Recientes</span>
                     </div>
                     <div id="notif-list" class="max-h-72 overflow-y-auto p-2 text-xs divide-y divide-gray-100">
-                        <div class="p-3 text-center text-gray-400">Sin notificaciones por ahora</div>
+                        <div class="p-3 text-center text-gray-400">Sin notificaciones</div>
                     </div>
                 </div>
             </div>
@@ -146,6 +150,25 @@
         <div id="direcciones-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4"></div>
     </div>
 
+    <!-- Vista: Novedades y Cambios de Estatus (NUEVO SECTOR) -->
+    <div id="view-novedades" class="hidden p-3 sm:p-6 max-w-6xl mx-auto">
+        <div class="flex justify-between items-center mb-4 sm:mb-6">
+            <div>
+                <h2 class="text-xl sm:text-2xl font-bold text-amber-900"><i class="fas fa-newspaper mr-2"></i>Panel de Novedades y Cambios de Estatus</h2>
+                <p class="text-xs sm:text-sm text-gray-500">Listado de modificaciones, cambios de estado y comentarios no revisados</p>
+            </div>
+            <button onclick="markAllNovedadesRead()" class="bg-gray-700 hover:bg-gray-800 text-white font-semibold py-1.5 px-3 rounded text-xs sm:text-sm transition">
+                <i class="fas fa-check-double mr-1"></i> Marcar Todo como Revisado
+            </button>
+        </div>
+
+        <div class="bg-white rounded-lg shadow overflow-hidden border border-amber-200">
+            <div id="novedades-container" class="divide-y divide-gray-100 p-2 sm:p-4">
+                <!-- Se llena dinámicamente con las novedades -->
+            </div>
+        </div>
+    </div>
+
     <!-- Vista: Agenda de Reuniones -->
     <div id="view-agenda" class="hidden p-3 sm:p-6 max-w-6xl mx-auto">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
@@ -210,7 +233,7 @@
         </div>
     </div>
 
-    <!-- Modal: Nueva Reunión -->
+    <!-- Modales -->
     <div id="modal-meeting" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50 p-4">
         <div class="bg-white p-5 rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <h3 class="text-base sm:text-lg font-bold mb-3 text-purple-900"><i class="fas fa-calendar-plus mr-2"></i>Agendar Reunión</h3>
@@ -219,12 +242,10 @@
                     <label class="block text-xs font-medium">Asunto / Motivo</label>
                     <input type="text" id="meet-title" required class="mt-1 w-full border rounded py-2 px-3 text-sm" placeholder="Ej: Revisión de casos de viviendas afectadas">
                 </div>
-                
                 <div>
                     <label class="block text-xs font-medium mb-1">Direcciones Convocadas</label>
                     <div id="meet-dirs-container" class="max-h-32 overflow-y-auto border rounded p-2 bg-gray-50 text-xs grid grid-cols-1 gap-1"></div>
                 </div>
-
                 <div class="grid grid-cols-2 gap-2">
                     <div>
                         <label class="block text-xs font-medium">Fecha</label>
@@ -235,17 +256,14 @@
                         <input type="time" id="meet-time" required class="mt-1 w-full border rounded py-2 px-3 text-sm">
                     </div>
                 </div>
-
                 <div>
                     <label class="block text-xs font-medium">Orden del Día / Puntos a Tratar</label>
                     <textarea id="meet-agenda" required class="mt-1 w-full border rounded py-2 px-3 text-sm" rows="2" placeholder="Puntos a tratar..."></textarea>
                 </div>
-
                 <div>
                     <label class="block text-xs font-medium text-amber-900 font-bold">Requerimientos / Materiales Necesarios</label>
                     <textarea id="meet-reqs" class="mt-1 w-full border border-amber-300 bg-amber-50 rounded py-2 px-3 text-sm" rows="2" placeholder="Ej: Traer fichas técnicas, expedientes..."></textarea>
                 </div>
-
                 <div class="flex justify-end gap-2 mt-4">
                     <button type="button" onclick="closeModals()" class="bg-gray-300 hover:bg-gray-400 py-1.5 px-4 rounded text-xs sm:text-sm">Cancelar</button>
                     <button type="submit" class="bg-purple-700 hover:bg-purple-800 text-white py-1.5 px-4 rounded text-xs sm:text-sm font-bold">Agendar</button>
@@ -254,7 +272,6 @@
         </div>
     </div>
 
-    <!-- Modal: Nueva Tarea -->
     <div id="modal-task" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50 p-4">
         <div class="bg-white p-5 rounded-lg shadow-xl w-full max-w-md">
             <h3 class="text-base sm:text-lg font-bold mb-3">Agregar Tarea</h3>
@@ -279,7 +296,6 @@
         </div>
     </div>
 
-    <!-- Modal: Convocar Personal -->
     <div id="modal-call" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50 p-4">
         <div class="bg-white p-5 rounded-lg shadow-xl w-full max-w-md text-xs sm:text-sm">
             <h3 class="text-base sm:text-lg font-bold mb-3 text-orange-600"><i class="fas fa-bullhorn mr-2"></i>Convocar Personal</h3>
@@ -290,7 +306,7 @@
                 </div>
                 <div>
                     <label class="block font-medium">Motivo / Solicitud</label>
-                    <textarea id="call-msg" required class="mt-1 w-full border rounded py-2 px-3" rows="3" placeholder="Ej: Ven a mi oficina para revisar el punto de cuenta..."></textarea>
+                    <textarea id="call-msg" required class="mt-1 w-full border rounded py-2 px-3" rows="3" placeholder="Ej: Ven a mi oficina..."></textarea>
                 </div>
                 <div class="flex justify-end gap-2 mt-4">
                     <button type="button" onclick="closeModals()" class="bg-gray-300 hover:bg-gray-400 py-1.5 px-4 rounded">Cancelar</button>

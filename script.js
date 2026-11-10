@@ -1,20 +1,9 @@
-// --- BASE DE DATOS LOCAL (localStorage) ---
-const ADMIN_EMAIL = 'vielmawesly@gmail.com';
-const ADMIN_PASS = '0941';
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
-if (!localStorage.getItem('db_users')) {
-    const initialUsers = [{
-        id: 'admin_001',
-        name: 'Administrador Principal',
-        email: ADMIN_EMAIL,
-        password: ADMIN_PASS,
-        role: 'admin'
-    }];
-    localStorage.setItem('db_users', JSON.stringify(initialUsers));
-    localStorage.setItem('db_tasks', JSON.stringify([]));
-    localStorage.setItem('db_calls', JSON.stringify([]));
-    localStorage.setItem('db_meetings', JSON.stringify([]));
-}
+// Configuración de Supabase
+const SUPABASE_URL = 'https://cupvbdtltmfoxyupxcne.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_CctZKBC4P7dtXLHs1D-mow_VGKRG9iG';
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const direcciones = [
     "CONSULTORÍA JURÍDICA",
@@ -36,41 +25,43 @@ const direcciones = [
 
 let currentUser = null;
 let currentDireccion = "";
-let notifInterval;
 
 // --- AUTENTICACIÓN ---
-document.getElementById('login-form').addEventListener('submit', (e) => {
+document.getElementById('login-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const email = document.getElementById('login-email').value.trim();
+    const email = document.getElementById('login-email').value.trim().toLowerCase();
     const pass = document.getElementById('login-password').value.trim();
-    
-    const users = JSON.parse(localStorage.getItem('db_users'));
-    const user = users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === pass);
 
-    if (user) {
-        currentUser = user;
-        localStorage.setItem('session_user', JSON.stringify(user));
-        startApp();
-    } else {
+    const { data: users, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', email)
+        .eq('password', pass);
+
+    if (error || !users || users.length === 0) {
         Swal.fire('Error', 'Credenciales incorrectas.', 'error');
+        return;
     }
+
+    currentUser = users[0];
+    localStorage.setItem('session_user', JSON.stringify(currentUser));
+    startApp();
 });
 
-function logout() {
+window.logout = function() {
     currentUser = null;
     localStorage.removeItem('session_user');
-    clearInterval(notifInterval);
     hideAllViews();
     document.getElementById('navbar').classList.add('hidden');
     document.getElementById('view-login').classList.remove('hidden');
     document.getElementById('login-form').reset();
-}
+};
 
 function startApp() {
     hideAllViews();
     document.getElementById('navbar').classList.remove('hidden');
     document.getElementById('user-info').innerHTML = `<i class="fas fa-user mr-1"></i> ${currentUser.name} <span class="bg-blue-700 px-2 py-0.5 rounded text-xs ml-1">${currentUser.role.toUpperCase()}</span>`;
-    
+
     const btnAdmin = document.getElementById('btn-admin-panel');
     if (currentUser.role === 'admin') {
         btnAdmin.classList.remove('hidden');
@@ -79,12 +70,11 @@ function startApp() {
         btnAdmin.classList.add('hidden');
     }
 
-    renderDirecciones();
     showDashboard();
-    startNotificationListener();
+    listenRealtimeCalls();
 }
 
-// --- VISTAS Y NAVEGACIÓN ---
+// --- NAVEGACIÓN ---
 function hideAllViews() {
     document.getElementById('view-login').classList.add('hidden');
     document.getElementById('view-admin').classList.add('hidden');
@@ -94,17 +84,17 @@ function hideAllViews() {
     closeModals();
 }
 
-function showDashboard() {
+window.showDashboard = function() {
     hideAllViews();
     renderDirecciones();
     document.getElementById('view-dashboard').classList.remove('hidden');
-}
+};
 
-function showAgenda() {
+window.showAgenda = function() {
     hideAllViews();
     renderMeetings();
     document.getElementById('view-agenda').classList.remove('hidden');
-}
+};
 
 function showAdminPanel() {
     hideAllViews();
@@ -112,194 +102,13 @@ function showAdminPanel() {
     renderUsersTable();
 }
 
-// --- MÓDULO DE AGENDA Y REUNIONES MULTIDIRECCIONALES ---
-function renderMeetings() {
-    const meetings = JSON.parse(localStorage.getItem('db_meetings')) || [];
-    const tbody = document.getElementById('meetings-tbody');
-
-    if (meetings.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">No hay reuniones agendadas.</td></tr>`;
-        return;
-    }
-
-    tbody.innerHTML = meetings.sort((a,b) => new Date(a.date + ' ' + a.time) - new Date(b.date + ' ' + b.time)).map(m => {
-        let statusBadge = m.status === 'Programada' ? 'bg-purple-100 text-purple-800' :
-                          m.status === 'Realizada' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
-
-        // Renderizar múltiples direcciones convocadas
-        const dirsBadges = (m.direcciones || [m.direccion || 'Sin Dirección']).map(d => 
-            `<span class="inline-block bg-purple-100 text-purple-800 text-[10px] font-semibold px-2 py-0.5 rounded mr-1 mb-1 border border-purple-200">${d}</span>`
-        ).join('');
-
-        // Requerimientos/Insumos previos
-        const reqsHtml = m.requirements ? 
-            `<div class="text-xs text-amber-900 bg-amber-50 p-2 rounded border border-amber-200 mt-2">
-                <b><i class="fas fa-folder-open mr-1"></i>Requerido previa reunión:</b> ${m.requirements}
-             </div>` : '';
-
-        return `
-            <tr>
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
-                    <div><i class="far fa-calendar text-purple-700 mr-1"></i>${m.date}</div>
-                    <div class="text-xs text-gray-500 font-normal"><i class="far fa-clock mr-1"></i>${m.time}</div>
-                </td>
-                <td class="px-6 py-4 text-sm text-gray-900">
-                    <div class="font-bold text-base text-gray-800">${m.title}</div>
-                    <div class="text-xs text-gray-600 mt-1 max-w-sm"><b>Orden del día:</b> ${m.agenda}</div>
-                    ${reqsHtml}
-                </td>
-                <td class="px-6 py-4 text-sm text-gray-900">
-                    <div class="max-w-xs flex flex-wrap mb-1">${dirsBadges}</div>
-                    <div class="text-[11px] text-gray-400">Agendado por: ${m.createdBy}</div>
-                </td>
-                <td class="px-6 py-4 text-sm">
-                    <select onchange="updateMeetingStatus('${m.id}', this.value)" class="${statusBadge} rounded px-2 py-1 text-xs font-bold border-none outline-none cursor-pointer mb-2">
-                        <option value="Programada" ${m.status === 'Programada' ? 'selected' : ''}>Programada</option>
-                        <option value="Realizada" ${m.status === 'Realizada' ? 'selected' : ''}>Realizada</option>
-                        <option value="Cancelada" ${m.status === 'Cancelada' ? 'selected' : ''}>Cancelada</option>
-                    </select>
-                    <br>
-                    <button onclick="openMeetingDetails('${m.id}')" class="text-xs text-purple-800 font-bold underline mt-1">
-                        <i class="fas fa-file-alt mr-1"></i> Ver/Añadir Minuta
-                    </button>
-                </td>
-            </tr>
-        `;
-    }).join('');
-}
-
-function openMeetingModal() {
-    document.getElementById('form-meeting').reset();
-    
-    // Renderizar lista de direcciones con checkboxes
-    const container = document.getElementById('meet-dirs-container');
-    container.innerHTML = direcciones.map(d => `
-        <label class="flex items-center gap-1.5 cursor-pointer hover:bg-gray-100 p-1 rounded">
-            <input type="checkbox" name="meet_dir_check" value="${d}" class="rounded text-purple-700 focus:ring-purple-500">
-            <span class="truncate">${d}</span>
-        </label>
-    `).join('');
-
-    document.getElementById('modal-meeting').classList.remove('hidden');
-}
-
-document.getElementById('form-meeting').addEventListener('submit', (e) => {
-    e.preventDefault();
-
-    const selectedDirs = Array.from(document.querySelectorAll('input[name="meet_dir_check"]:checked')).map(cb => cb.value);
-
-    if (selectedDirs.length === 0) {
-        Swal.fire('Atención', 'Debe seleccionar al menos una dirección convocada.', 'warning');
-        return;
-    }
-
-    const newMeeting = {
-        id: 'meet_' + Date.now(),
-        title: document.getElementById('meet-title').value,
-        direcciones: selectedDirs,
-        date: document.getElementById('meet-date').value,
-        time: document.getElementById('meet-time').value,
-        agenda: document.getElementById('meet-agenda').value,
-        requirements: document.getElementById('meet-reqs').value,
-        status: 'Programada',
-        createdBy: currentUser.name,
-        minuta: ''
-    };
-
-    const meetings = JSON.parse(localStorage.getItem('db_meetings')) || [];
-    meetings.push(newMeeting);
-    localStorage.setItem('db_meetings', JSON.stringify(meetings));
-
-    closeModals();
-    renderMeetings();
-    Swal.fire('Agendada', 'La reunión se registró correctamente en la agenda.', 'success');
-});
-
-window.updateMeetingStatus = function(meetId, status) {
-    const meetings = JSON.parse(localStorage.getItem('db_meetings')) || [];
-    const idx = meetings.findIndex(m => m.id === meetId);
-    if (idx > -1) {
-        meetings[idx].status = status;
-        localStorage.setItem('db_meetings', JSON.stringify(meetings));
-        renderMeetings();
-    }
-};
-
-window.openMeetingDetails = function(meetId) {
-    const meetings = JSON.parse(localStorage.getItem('db_meetings')) || [];
-    const meeting = meetings.find(m => m.id === meetId);
-    if (!meeting) return;
-
-    const dirsText = (meeting.direcciones || [meeting.direccion]).join(', ');
-
-    Swal.fire({
-        title: 'Minuta y Acuerdos de la Reunión',
-        html: `
-            <div class="text-left text-xs mb-1"><b>Asunto:</b> ${meeting.title}</div>
-            <div class="text-left text-xs mb-1"><b>Convocados:</b> ${dirsText}</div>
-            <div class="text-left text-xs mb-2"><b>Requerimientos:</b> ${meeting.requirements || 'Sin requerimientos'}</div>
-            <div class="text-left text-xs mb-3"><b>Orden del Día:</b> ${meeting.agenda}</div>
-            <div class="text-left">
-                <label class="block text-xs font-bold text-gray-700 mb-1">Acuerdos / Minuta:</label>
-                <textarea id="swal-minuta" class="w-full border rounded p-2 text-sm" rows="4" placeholder="Escriba las conclusiones y compromisos alcanzados...">${meeting.minuta || ''}</textarea>
-            </div>
-        `,
-        showCancelButton: true,
-        confirmButtonText: 'Guardar Minuta',
-        confirmButtonColor: '#6b21a8',
-        cancelButtonText: 'Cerrar'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            meeting.minuta = document.getElementById('swal-minuta').value;
-            localStorage.setItem('db_meetings', JSON.stringify(meetings));
-            renderMeetings();
-            Swal.fire('Guardado', 'Minuta actualizada.', 'success');
-        }
-    });
-};
-
-// --- ADMINISTRACIÓN DE USUARIOS ---
-document.getElementById('register-form').addEventListener('submit', (e) => {
-    e.preventDefault();
-    const name = document.getElementById('reg-name').value.trim();
-    const email = document.getElementById('reg-email').value.trim().toLowerCase();
-    const password = document.getElementById('reg-password').value.trim();
-    const role = document.getElementById('reg-role').value;
-
-    let users = JSON.parse(localStorage.getItem('db_users'));
-    if (users.find(u => u.email === email)) {
-        Swal.fire('Error', 'Este correo ya está registrado.', 'error');
-        return;
-    }
-
-    users.push({ id: 'usr_' + Date.now(), name, email, password, role });
-    localStorage.setItem('db_users', JSON.stringify(users));
-    Swal.fire('Éxito', `Usuario ${name} creado como ${role.toUpperCase()}`, 'success');
-    document.getElementById('register-form').reset();
-    renderUsersTable();
-});
-
-function renderUsersTable() {
-    const users = JSON.parse(localStorage.getItem('db_users'));
-    const tbody = document.getElementById('users-table-body');
-    tbody.innerHTML = users.map(u => `
-        <tr>
-            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${u.name}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${u.email}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                <span class="px-2 py-1 rounded text-xs font-bold ${u.role === 'admin' ? 'bg-yellow-200 text-yellow-800' : u.role === 'director' ? 'bg-blue-200 text-blue-800' : 'bg-green-200 text-green-800'}">${u.role.toUpperCase()}</span>
-            </td>
-        </tr>
-    `).join('');
-}
-
 // --- DIRECCIONES Y TAREAS ---
-function renderDirecciones() {
+async function renderDirecciones() {
     const grid = document.getElementById('direcciones-grid');
-    const tasks = JSON.parse(localStorage.getItem('db_tasks')) || [];
+    const { data: tasks } = await supabase.from('tasks').select('*');
 
     grid.innerHTML = direcciones.map((dir, index) => {
-        const dirTasks = tasks.filter(t => t.direccion === dir);
+        const dirTasks = (tasks || []).filter(t => t.direccion === dir);
         const total = dirTasks.length;
         const completadas = dirTasks.filter(t => t.status === 'Completado').length;
         const enProgreso = dirTasks.filter(t => t.status === 'Pendiente' || t.status === 'En Proceso').length;
@@ -333,31 +142,35 @@ function renderDirecciones() {
     }).join('');
 }
 
-function openDireccion(dirName) {
+window.openDireccion = async function(dirName) {
     currentDireccion = dirName;
     document.getElementById('current-dir-title').innerText = dirName;
     hideAllViews();
     document.getElementById('view-tasks').classList.remove('hidden');
-    renderTasks();
-    populateUserSelects();
-}
+    await renderTasks();
+    await populateUserSelects();
+};
 
-function renderTasks() {
-    const tasks = JSON.parse(localStorage.getItem('db_tasks')).filter(t => t.direccion === currentDireccion);
+async function renderTasks() {
+    const { data: tasks } = await supabase
+        .from('tasks')
+        .select('*')
+        .eq('direccion', currentDireccion);
+
     const tbody = document.getElementById('tasks-tbody');
     
-    if(tasks.length === 0) {
+    if (!tasks || tasks.length === 0) {
         tbody.innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">No hay tareas registradas en esta dirección.</td></tr>`;
         return;
     }
 
-    tbody.innerHTML = tasks.sort((a,b) => new Date(a.dueDate) - new Date(b.dueDate)).map(t => {
+    tbody.innerHTML = tasks.map(t => {
         let statusColor = t.status === 'Pendiente' ? 'bg-red-100 text-red-800' : 
                           t.status === 'En Proceso' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800';
         
-        const lastUpdate = (t.history && t.history.length > 0) ? t.history[t.history.length - 1] : null;
+        const historyArr = t.history || [];
+        const lastUpdate = historyArr.length > 0 ? historyArr[historyArr.length - 1] : null;
         const lastNoteText = lastUpdate ? lastUpdate.note : 'Sin avances registrados';
-        const historyCount = t.history ? t.history.length : 0;
 
         return `
         <tr>
@@ -365,15 +178,15 @@ function renderTasks() {
                 <div class="w-56 font-semibold break-words">${t.description}</div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                <div><i class="fas fa-user-circle text-gray-400 mr-1"></i>${t.assignedToName}</div>
-                <div class="text-xs text-gray-500 mt-1"><i class="far fa-calendar-alt text-gray-400 mr-1"></i>Límite: ${t.dueDate}</div>
+                <div><i class="fas fa-user-circle text-gray-400 mr-1"></i>${t.assigned_to_name}</div>
+                <div class="text-xs text-gray-500 mt-1"><i class="far fa-calendar-alt text-gray-400 mr-1"></i>Límite: ${t.due_date}</div>
             </td>
             <td class="px-6 py-4 text-sm text-gray-700">
                 <div class="text-xs bg-gray-50 p-2 rounded border mb-1 max-w-xs truncate">
                     <b>Último avance:</b> ${lastNoteText}
                 </div>
                 <button onclick="openTaskHistory('${t.id}')" class="text-xs text-blue-700 hover:text-blue-900 font-bold underline">
-                    <i class="fas fa-history mr-1"></i> Ver/Añadir Bitácora (${historyCount})
+                    <i class="fas fa-history mr-1"></i> Ver/Añadir Bitácora (${historyArr.length})
                 </button>
             </td>
             <td class="px-6 py-4 text-sm">
@@ -383,27 +196,27 @@ function renderTasks() {
                     <option value="Completado" ${t.status === 'Completado' ? 'selected' : ''}>Completado</option>
                 </select>
                 <div class="text-xs text-gray-500 mt-1">
-                    <b>Última mod.:</b><br>${t.lastModifiedBy}
+                    <b>Última mod.:</b><br>${t.last_modified_by}
                 </div>
             </td>
         </tr>
-    `}).join('');
+    `;
+    }).join('');
 }
 
-document.getElementById('form-task').addEventListener('submit', (e) => {
+document.getElementById('form-task').addEventListener('submit', async (e) => {
     e.preventDefault();
     const selectResp = document.getElementById('task-resp');
-    
+
     const newTask = {
         id: 'tsk_' + Date.now(),
         direccion: currentDireccion,
         description: document.getElementById('task-desc').value,
-        assignedToId: selectResp.value,
-        assignedToName: selectResp.options[selectResp.selectedIndex].text,
-        dueDate: document.getElementById('task-date').value,
+        assigned_to_id: selectResp.value,
+        assigned_to_name: selectResp.options[selectResp.selectedIndex].text,
+        due_date: document.getElementById('task-date').value,
         status: 'Pendiente',
-        lastModifiedBy: currentUser.name,
-        createdAt: new Date().toLocaleDateString(),
+        last_modified_by: currentUser.name,
         history: [{
             timestamp: new Date().toLocaleString(),
             user: currentUser.name,
@@ -412,19 +225,14 @@ document.getElementById('form-task').addEventListener('submit', (e) => {
         }]
     };
 
-    const tasks = JSON.parse(localStorage.getItem('db_tasks'));
-    tasks.push(newTask);
-    localStorage.setItem('db_tasks', JSON.stringify(tasks));
-    
+    await supabase.from('tasks').insert([newTask]);
     closeModals();
-    renderTasks();
-    renderDirecciones();
+    await renderTasks();
     Swal.fire('Guardado', 'Tarea asignada correctamente.', 'success');
 });
 
-window.openTaskHistory = function(taskId) {
-    const tasks = JSON.parse(localStorage.getItem('db_tasks'));
-    const task = tasks.find(t => t.id === taskId);
+window.openTaskHistory = async function(taskId) {
+    const { data: task } = await supabase.from('tasks').select('*').eq('id', taskId).single();
     if (!task) return;
 
     const historyHtml = (task.history || []).map(h => `
@@ -441,176 +249,306 @@ window.openTaskHistory = function(taskId) {
         title: 'Historial y Avances',
         html: `
             <div class="text-left text-xs mb-3 font-semibold text-gray-600">Tarea: ${task.description}</div>
-            <div class="max-h-56 overflow-y-auto mb-4 p-2 bg-gray-100 rounded border">
-                ${historyHtml || '<p class="text-xs text-gray-400 text-center">Sin registros previos.</p>'}
-            </div>
+            <div class="max-h-56 overflow-y-auto mb-4 p-2 bg-gray-100 rounded border">${historyHtml}</div>
             <div class="text-left">
                 <label class="block text-xs font-bold text-gray-700 mb-1">Agregar Nuevo Avance:</label>
-                <textarea id="swal-advance-note" class="w-full border rounded p-2 text-sm focus:ring-blue-500 focus:border-blue-500" rows="3" placeholder="Escriba los avances detallados de esta tarea..."></textarea>
+                <textarea id="swal-advance-note" class="w-full border rounded p-2 text-sm" rows="3" placeholder="Escriba el avance..."></textarea>
             </div>
         `,
         showCancelButton: true,
         confirmButtonText: 'Guardar Avance',
-        cancelButtonText: 'Cerrar',
         confirmButtonColor: '#1e3a8a',
         preConfirm: () => {
             const note = document.getElementById('swal-advance-note').value.trim();
             if (!note) {
-                Swal.showValidationMessage('Debe ingresar un comentario para registrar el avance.');
+                Swal.showValidationMessage('Debe escribir un avance.');
                 return false;
             }
             return note;
         }
-    }).then((result) => {
+    }).then(async (result) => {
         if (result.isConfirmed) {
-            const taskIndex = tasks.findIndex(t => t.id === taskId);
-            if (taskIndex > -1) {
-                if (!tasks[taskIndex].history) tasks[taskIndex].history = [];
-                tasks[taskIndex].history.push({
-                    timestamp: new Date().toLocaleString(),
-                    user: currentUser.name,
-                    note: result.value,
-                    status: tasks[taskIndex].status
-                });
-                tasks[taskIndex].lastModifiedBy = currentUser.name;
-                localStorage.setItem('db_tasks', JSON.stringify(tasks));
-                renderTasks();
-                Swal.fire('Registrado', 'El avance se guardó en la bitácora.', 'success');
-            }
+            const updatedHistory = task.history || [];
+            updatedHistory.push({
+                timestamp: new Date().toLocaleString(),
+                user: currentUser.name,
+                note: result.value,
+                status: task.status
+            });
+
+            await supabase
+                .from('tasks')
+                .update({ history: updatedHistory, last_modified_by: currentUser.name })
+                .eq('id', taskId);
+
+            await renderTasks();
+            Swal.fire('Registrado', 'Avance guardado.', 'success');
         }
     });
 };
 
-window.updateTaskStatus = function(taskId, newStatus) {
-    const tasks = JSON.parse(localStorage.getItem('db_tasks'));
-    const taskIndex = tasks.findIndex(t => t.id === taskId);
-    
-    if(taskIndex > -1) {
-        const oldStatus = tasks[taskIndex].status;
-        tasks[taskIndex].status = newStatus;
-        tasks[taskIndex].lastModifiedBy = currentUser.name;
+window.updateTaskStatus = async function(taskId, newStatus) {
+    const { data: task } = await supabase.from('tasks').select('*').eq('id', taskId).single();
+    if (!task) return;
 
-        if (!tasks[taskIndex].history) tasks[taskIndex].history = [];
-        tasks[taskIndex].history.push({
-            timestamp: new Date().toLocaleString(),
-            user: currentUser.name,
-            note: `Cambio de estado: de "${oldStatus}" a "${newStatus}".`,
-            status: newStatus
-        });
+    const updatedHistory = task.history || [];
+    updatedHistory.push({
+        timestamp: new Date().toLocaleString(),
+        user: currentUser.name,
+        note: `Cambio de estado: de "${task.status}" a "${newStatus}".`,
+        status: newStatus
+    });
 
-        localStorage.setItem('db_tasks', JSON.stringify(tasks));
-        renderTasks();
-        renderDirecciones();
-    }
+    await supabase
+        .from('tasks')
+        .update({ status: newStatus, last_modified_by: currentUser.name, history: updatedHistory })
+        .eq('id', taskId);
+
+    await renderTasks();
 };
 
-// --- LLAMADAS Y NOTIFICACIONES EN TIEMPO REAL ---
-function populateUserSelects() {
-    const users = JSON.parse(localStorage.getItem('db_users')).filter(u => u.id !== currentUser.id && u.role !== 'admin');
-    const options = users.map(u => `<option value="${u.id}">${u.name} (${u.role})</option>`).join('');
-    document.getElementById('task-resp').innerHTML = options;
-    document.getElementById('call-to').innerHTML = options;
+// --- AGENDA DE REUNIONES ---
+async function renderMeetings() {
+    const { data: meetings } = await supabase.from('meetings').select('*');
+    const tbody = document.getElementById('meetings-tbody');
+
+    if (!meetings || meetings.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">No hay reuniones agendadas.</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = meetings.map(m => {
+        let statusBadge = m.status === 'Programada' ? 'bg-purple-100 text-purple-800' :
+                          m.status === 'Realizada' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
+
+        const dirsBadges = (m.direcciones || []).map(d => 
+            `<span class="inline-block bg-purple-100 text-purple-800 text-[10px] font-semibold px-2 py-0.5 rounded mr-1 mb-1 border border-purple-200">${d}</span>`
+        ).join('');
+
+        const reqsHtml = m.requirements ? 
+            `<div class="text-xs text-amber-900 bg-amber-50 p-2 rounded border border-amber-200 mt-2">
+                <b><i class="fas fa-folder-open mr-1"></i>Requerido:</b> ${m.requirements}
+             </div>` : '';
+
+        return `
+            <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
+                    <div><i class="far fa-calendar text-purple-700 mr-1"></i>${m.date}</div>
+                    <div class="text-xs text-gray-500 font-normal"><i class="far fa-clock mr-1"></i>${m.time}</div>
+                </td>
+                <td class="px-6 py-4 text-sm text-gray-900">
+                    <div class="font-bold text-base text-gray-800">${m.title}</div>
+                    <div class="text-xs text-gray-600 mt-1 max-w-sm"><b>Orden del día:</b> ${m.agenda}</div>
+                    ${reqsHtml}
+                </td>
+                <td class="px-6 py-4 text-sm text-gray-900">
+                    <div class="max-w-xs flex flex-wrap mb-1">${dirsBadges}</div>
+                    <div class="text-[11px] text-gray-400">Agendado por: ${m.created_by}</div>
+                </td>
+                <td class="px-6 py-4 text-sm">
+                    <select onchange="updateMeetingStatus('${m.id}', this.value)" class="${statusBadge} rounded px-2 py-1 text-xs font-bold border-none outline-none cursor-pointer mb-2">
+                        <option value="Programada" ${m.status === 'Programada' ? 'selected' : ''}>Programada</option>
+                        <option value="Realizada" ${m.status === 'Realizada' ? 'selected' : ''}>Realizada</option>
+                        <option value="Cancelada" ${m.status === 'Cancelada' ? 'selected' : ''}>Cancelada</option>
+                    </select>
+                    <br>
+                    <button onclick="openMeetingDetails('${m.id}')" class="text-xs text-purple-800 font-bold underline mt-1">
+                        <i class="fas fa-file-alt mr-1"></i> Minuta
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
 }
 
-document.getElementById('form-call').addEventListener('submit', (e) => {
+window.openMeetingModal = function() {
+    document.getElementById('form-meeting').reset();
+    const container = document.getElementById('meet-dirs-container');
+    container.innerHTML = direcciones.map(d => `
+        <label class="flex items-center gap-1.5 cursor-pointer hover:bg-gray-100 p-1 rounded">
+            <input type="checkbox" name="meet_dir_check" value="${d}" class="rounded text-purple-700">
+            <span class="truncate">${d}</span>
+        </label>
+    `).join('');
+    document.getElementById('modal-meeting').classList.remove('hidden');
+};
+
+document.getElementById('form-meeting').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const selectedDirs = Array.from(document.querySelectorAll('input[name="meet_dir_check"]:checked')).map(cb => cb.value);
+
+    if (selectedDirs.length === 0) {
+        Swal.fire('Atención', 'Seleccione al menos una dirección convocada.', 'warning');
+        return;
+    }
+
+    const newMeeting = {
+        id: 'meet_' + Date.now(),
+        title: document.getElementById('meet-title').value,
+        direcciones: selectedDirs,
+        date: document.getElementById('meet-date').value,
+        time: document.getElementById('meet-time').value,
+        agenda: document.getElementById('meet-agenda').value,
+        requirements: document.getElementById('meet-reqs').value,
+        status: 'Programada',
+        created_by: currentUser.name,
+        minuta: ''
+    };
+
+    await supabase.from('meetings').insert([newMeeting]);
+    closeModals();
+    await renderMeetings();
+    Swal.fire('Agendada', 'La reunión se guardó en la base de datos.', 'success');
+});
+
+window.updateMeetingStatus = async function(meetId, status) {
+    await supabase.from('meetings').update({ status }).eq('id', meetId);
+    await renderMeetings();
+};
+
+window.openMeetingDetails = async function(meetId) {
+    const { data: meeting } = await supabase.from('meetings').select('*').eq('id', meetId).single();
+    if (!meeting) return;
+
+    Swal.fire({
+        title: 'Minuta de la Reunión',
+        html: `
+            <div class="text-left text-xs mb-1"><b>Asunto:</b> ${meeting.title}</div>
+            <div class="text-left text-xs mb-3"><b>Orden del día:</b> ${meeting.agenda}</div>
+            <div class="text-left">
+                <label class="block text-xs font-bold text-gray-700 mb-1">Acuerdos / Minuta:</label>
+                <textarea id="swal-minuta" class="w-full border rounded p-2 text-sm" rows="4">${meeting.minuta || ''}</textarea>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'Guardar Minuta',
+        confirmButtonColor: '#6b21a8'
+    }).then(async (result) => {
+        if (result.isConfirmed) {
+            const minuta = document.getElementById('swal-minuta').value;
+            await supabase.from('meetings').update({ minuta }).eq('id', meetId);
+            await renderMeetings();
+            Swal.fire('Guardado', 'Minuta actualizada.', 'success');
+        }
+    });
+};
+
+// --- TIEMPO REAL (NOTIFICACIONES/LLAMADOS) ---
+function listenRealtimeCalls() {
+    supabase
+        .channel('calls-channel')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'calls' }, payload => {
+            const newCall = payload.new;
+            if (newCall.to_id === currentUser.id) {
+                Swal.fire({
+                    title: '¡Llamado del Director!',
+                    text: `${newCall.from_name} te solicita: "${newCall.message}"`,
+                    icon: 'warning',
+                    confirmButtonText: 'Entendido'
+                });
+                fetchUnreadCalls();
+            }
+        })
+        .subscribe();
+
+    fetchUnreadCalls();
+}
+
+async function fetchUnreadCalls() {
+    if (!currentUser) return;
+    const { data: calls } = await supabase
+        .from('calls')
+        .select('*')
+        .eq('to_id', currentUser.id)
+        .eq('read', false);
+
+    const badge = document.getElementById('notif-badge');
+    if (calls && calls.length > 0) {
+        badge.innerText = calls.length;
+        badge.classList.remove('hidden');
+    } else {
+        badge.classList.add('hidden');
+    }
+}
+
+document.getElementById('form-call').addEventListener('submit', async (e) => {
     e.preventDefault();
     const selectTo = document.getElementById('call-to');
-    
+
     const newCall = {
         id: 'call_' + Date.now(),
-        fromId: currentUser.id,
-        fromName: currentUser.name,
-        toId: selectTo.value,
-        toName: selectTo.options[selectTo.selectedIndex].text,
+        from_id: currentUser.id,
+        from_name: currentUser.name,
+        to_id: selectTo.value,
+        to_name: selectTo.options[selectTo.selectedIndex].text,
         message: document.getElementById('call-msg').value,
-        direccionContext: currentDireccion,
+        direccion_context: currentDireccion,
         timestamp: new Date().toLocaleString(),
         read: false
     };
 
-    const calls = JSON.parse(localStorage.getItem('db_calls'));
-    calls.push(newCall);
-    localStorage.setItem('db_calls', JSON.stringify(calls));
-
+    await supabase.from('calls').insert([newCall]);
     closeModals();
-    Swal.fire('Enviado', `Se ha notificado a ${newCall.toName}.`, 'success');
+    Swal.fire('Enviado', `Se envió la alerta a ${newCall.to_name}.`, 'success');
 });
 
-function startNotificationListener() {
-    clearInterval(notifInterval);
-    notifInterval = setInterval(() => {
-        if(!currentUser) return;
-        
-        const calls = JSON.parse(localStorage.getItem('db_calls'));
-        const myUnread = calls.filter(c => c.toId === currentUser.id && !c.read);
-        
-        const badge = document.getElementById('notif-badge');
-        if (myUnread.length > 0) {
-            badge.innerText = myUnread.length;
-            badge.classList.remove('hidden');
-            
-            const lastCall = myUnread[myUnread.length - 1];
-            const callTime = parseInt(lastCall.id.split('_')[1]);
-            if (Date.now() - callTime < 3000) {
-                Swal.fire({
-                    title: '¡Llamado del Director!',
-                    text: `${lastCall.fromName} te solicita: "${lastCall.message}"`,
-                    icon: 'warning',
-                    confirmButtonText: 'Entendido'
-                });
-            }
-        } else {
-            badge.classList.add('hidden');
-        }
+// --- AUXILIARES ---
+async function populateUserSelects() {
+    const { data: users } = await supabase
+        .from('users')
+        .select('*')
+        .neq('id', currentUser.id)
+        .neq('role', 'admin');
 
-        renderNotifList(calls.filter(c => c.toId === currentUser.id).reverse());
-    }, 2000);
+    const options = (users || []).map(u => `<option value="${u.id}">${u.name} (${u.role})</option>`).join('');
+    document.getElementById('task-resp').innerHTML = options;
+    document.getElementById('call-to').innerHTML = options;
 }
 
-function renderNotifList(myCalls) {
-    const list = document.getElementById('notif-list');
-    if (myCalls.length === 0) {
-        list.innerHTML = `<div class="p-2 text-gray-500 text-center">Sin notificaciones</div>`;
-        return;
-    }
+document.getElementById('register-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('reg-name').value.trim();
+    const email = document.getElementById('reg-email').value.trim().toLowerCase();
+    const password = document.getElementById('reg-password').value.trim();
+    const role = document.getElementById('reg-role').value;
 
-    list.innerHTML = myCalls.map(c => `
-        <div class="p-2 border-b ${c.read ? 'bg-white text-gray-500' : 'bg-orange-50 text-gray-900 font-medium cursor-pointer'} hover:bg-gray-100" onclick="markAsRead('${c.id}')">
-            <div class="text-xs text-blue-800 mb-1"><i class="fas fa-user"></i> ${c.fromName}</div>
-            <div class="text-sm">${c.message}</div>
-            <div class="text-[10px] text-gray-400 mt-1">${c.timestamp}</div>
-        </div>
+    const newUser = { id: 'usr_' + Date.now(), name, email, password, role };
+    await supabase.from('users').insert([newUser]);
+    
+    Swal.fire('Éxito', `Usuario ${name} registrado en Supabase.`, 'success');
+    document.getElementById('register-form').reset();
+    renderUsersTable();
+});
+
+async function renderUsersTable() {
+    const { data: users } = await supabase.from('users').select('*');
+    const tbody = document.getElementById('users-table-body');
+    tbody.innerHTML = (users || []).map(u => `
+        <tr>
+            <td class="px-6 py-4 text-sm font-medium text-gray-900">${u.name}</td>
+            <td class="px-6 py-4 text-sm text-gray-500">${u.email}</td>
+            <td class="px-6 py-4 text-sm text-gray-500">
+                <span class="px-2 py-1 rounded text-xs font-bold ${u.role === 'admin' ? 'bg-yellow-200 text-yellow-800' : u.role === 'director' ? 'bg-blue-200 text-blue-800' : 'bg-green-200 text-green-800'}">${u.role.toUpperCase()}</span>
+            </td>
+        </tr>
     `).join('');
 }
 
-window.markAsRead = function(callId) {
-    const calls = JSON.parse(localStorage.getItem('db_calls'));
-    const callIndex = calls.findIndex(c => c.id === callId);
-    if(callIndex > -1) {
-        calls[callIndex].read = true;
-        localStorage.setItem('db_calls', JSON.stringify(calls));
-    }
-};
-
-function toggleNotifications() {
-    document.getElementById('notif-dropdown').classList.toggle('hidden');
-}
-
-function openTaskModal() {
+window.openTaskModal = function() {
     document.getElementById('form-task').reset();
     document.getElementById('modal-task').classList.remove('hidden');
-}
+};
 
-function openCallModal() {
+window.openCallModal = function() {
     document.getElementById('form-call').reset();
     document.getElementById('modal-call').classList.remove('hidden');
-}
+};
 
-function closeModals() {
+window.closeModals = function() {
     document.getElementById('modal-task').classList.add('hidden');
     document.getElementById('modal-call').classList.add('hidden');
     document.getElementById('modal-meeting').classList.add('hidden');
-}
+};
 
 window.onload = () => {
     hideAllViews();

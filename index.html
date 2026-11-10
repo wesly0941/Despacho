@@ -3,341 +3,398 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Despacho y Tareas</title>
+    <title>Sistema de Despacho & Control de Gestión</title>
     
-    <!-- Librerías Externas -->
+    <!-- Tailwind CSS & FontAwesome -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="bg-gray-100 min-h-screen text-gray-800 font-sans">
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col">
 
-    <!-- Navbar Adaptable -->
-    <nav id="navbar" class="bg-blue-900 text-white p-2 sm:p-4 shadow-md hidden flex flex-wrap justify-between items-center z-50 relative gap-2">
-        <div class="flex items-center gap-2">
-            <i class="fas fa-building text-lg sm:text-2xl text-blue-200"></i>
-            <h1 class="text-base sm:text-xl font-bold cursor-pointer truncate" onclick="showDashboard()">Despacho Central</h1>
-        </div>
-        
-        <div class="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm flex-wrap">
-            <span id="user-info" class="hidden md:inline font-medium text-gray-200 mr-2"></span>
-            
-            <button onclick="showDashboard()" class="bg-blue-800 hover:bg-blue-700 text-white font-semibold py-1 px-2 sm:px-3 rounded transition flex items-center gap-1">
-                <i class="fas fa-th-large"></i> <span class="hidden sm:inline">Direcciones</span>
-            </button>
-            
-            <button onclick="showNovedades()" class="bg-amber-600 hover:bg-amber-700 text-white font-semibold py-1 px-2 sm:px-3 rounded transition flex items-center gap-1 relative">
-                <i class="fas fa-newspaper"></i> <span>Novedades</span>
-                <span id="novedades-badge" class="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.2 rounded-full hidden">0</span>
-            </button>
-
-            <button onclick="showAgenda()" class="bg-purple-700 hover:bg-purple-800 text-white font-semibold py-1 px-2 sm:px-3 rounded transition flex items-center gap-1">
-                <i class="fas fa-calendar-alt"></i> <span class="hidden sm:inline">Agenda</span>
-            </button>
-            
-            <button id="btn-admin-panel" class="hidden bg-yellow-500 hover:bg-yellow-600 text-blue-900 font-bold py-1 px-2 sm:px-3 rounded transition flex items-center gap-1">
-                <i class="fas fa-cogs"></i> <span class="hidden sm:inline">Admin</span>
-            </button>
-
-            <!-- Campana de Alertas -->
-            <div class="relative cursor-pointer px-1 py-1" onclick="toggleNotifications()">
-                <i class="fas fa-bell text-lg sm:text-xl text-yellow-300 hover:text-yellow-400 transition"></i>
-                <span id="notif-badge" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.2 rounded-full hidden">0</span>
-                
-                <div id="notif-dropdown" class="absolute right-0 mt-2 w-72 sm:w-80 bg-white text-gray-800 rounded shadow-xl border hidden z-50">
-                    <div class="p-2 border-b font-bold text-xs sm:text-sm bg-gray-100 flex justify-between items-center">
-                        <span><i class="fas fa-bell text-yellow-600 mr-1"></i> Notificaciones Recientes</span>
-                    </div>
-                    <div id="notif-list" class="max-h-72 overflow-y-auto p-2 text-xs divide-y divide-gray-100">
-                        <div class="p-3 text-center text-gray-400">Sin notificaciones</div>
-                    </div>
+    <!-- Navbar Minimalista -->
+    <nav id="navbar" class="bg-slate-900 text-slate-100 px-4 py-3 shadow-sm hidden sticky top-0 z-50 backdrop-blur-md bg-opacity-95 border-b border-slate-800">
+        <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-3">
+            <div class="flex items-center gap-2 cursor-pointer" onclick="showDashboard()">
+                <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold shadow-sm">
+                    <i class="fas fa-layer-group text-sm"></i>
                 </div>
+                <span class="text-base font-bold tracking-tight text-white">Despacho Central</span>
             </div>
+            
+            <div class="flex items-center gap-2 text-xs sm:text-sm flex-wrap">
+                <span id="user-info" class="hidden md:inline-flex items-center text-slate-300 mr-2"></span>
+                
+                <button onclick="showDashboard()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 transition font-medium flex items-center gap-1.5 border border-slate-700">
+                    <i class="fas fa-chart-pie text-indigo-400"></i> <span>Dashboard</span>
+                </button>
 
-            <button onclick="logout()" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-1 px-2 sm:px-3 rounded transition flex items-center gap-1">
-                <i class="fas fa-sign-out-alt"></i> <span class="hidden sm:inline">Salir</span>
-            </button>
+                <button onclick="showNovedades()" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition font-medium flex items-center gap-1.5 relative shadow-sm">
+                    <i class="fas fa-bell"></i> <span>Novedades</span>
+                    <span id="novedades-badge" class="bg-rose-500 text-white text-[10px] font-extrabold px-1.5 py-0.2 rounded-full hidden">0</span>
+                </button>
+
+                <button onclick="showAgenda()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 transition font-medium flex items-center gap-1.5 border border-slate-700">
+                    <i class="fas fa-calendar-alt text-amber-400"></i> <span>Agenda</span>
+                </button>
+                
+                <button id="btn-admin-panel" class="hidden px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold transition flex items-center gap-1.5">
+                    <i class="fas fa-shield-alt"></i> <span>Admin</span>
+                </button>
+
+                <button onclick="logout()" class="px-3 py-1.5 rounded-lg bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white transition font-medium flex items-center gap-1 border border-rose-500/30">
+                    <i class="fas fa-sign-out-alt"></i> <span class="hidden sm:inline">Salir</span>
+                </button>
+            </div>
         </div>
     </nav>
 
     <!-- Vista: Login -->
-    <div id="view-login" class="min-h-screen flex items-center justify-center p-4">
-        <div class="bg-white p-6 sm:p-8 rounded-lg shadow-xl w-full max-w-md">
+    <div id="view-login" class="min-h-screen flex items-center justify-center p-4 bg-slate-900">
+        <div class="bg-slate-800 p-8 rounded-2xl shadow-2xl w-full max-w-md border border-slate-700">
             <div class="text-center mb-6">
-                <i class="fas fa-clipboard-list text-4xl sm:text-5xl text-blue-900 mb-2"></i>
-                <h2 class="text-xl sm:text-2xl font-bold text-gray-800">Sistema de Tareas</h2>
-                <p class="text-gray-500 text-xs sm:text-sm">Dirección de Despacho</p>
+                <div class="w-14 h-14 bg-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg text-white text-2xl">
+                    <i class="fas fa-building"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-white tracking-tight">Despacho Central</h2>
+                <p class="text-slate-400 text-xs mt-1">Sistema Integrado de Seguimiento y Control</p>
             </div>
             
             <form id="login-form" class="space-y-4">
                 <div>
-                    <label class="block text-xs sm:text-sm font-medium text-gray-700">Correo Electrónico</label>
-                    <input type="email" id="login-email" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 text-sm">
+                    <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Correo Institucional</label>
+                    <input type="email" id="login-email" required class="w-full bg-slate-900 border border-slate-700 rounded-xl py-2.5 px-3.5 text-slate-100 text-sm focus:outline-none focus:border-indigo-500 transition">
                 </div>
                 <div>
-                    <label class="block text-xs sm:text-sm font-medium text-gray-700">Contraseña</label>
-                    <input type="password" id="login-password" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 text-sm">
+                    <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Contraseña</label>
+                    <input type="password" id="login-password" required class="w-full bg-slate-900 border border-slate-700 rounded-xl py-2.5 px-3.5 text-slate-100 text-sm focus:outline-none focus:border-indigo-500 transition">
                 </div>
-                <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-900 hover:bg-blue-800">
-                    Iniciar Sesión
+                <button type="submit" class="w-full py-3 px-4 rounded-xl text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-500 transition shadow-lg shadow-indigo-600/30">
+                    Acceder al Sistema
                 </button>
             </form>
         </div>
     </div>
 
     <!-- Vista: Admin Panel -->
-    <div id="view-admin" class="hidden p-3 sm:p-6 max-w-4xl mx-auto">
-        <div class="flex justify-between items-center mb-6">
-            <h2 class="text-xl sm:text-2xl font-bold text-blue-900"><i class="fas fa-users-cog mr-2"></i>Panel de Administración</h2>
-            <button onclick="showDashboard()" class="bg-gray-600 hover:bg-gray-700 text-white py-1 px-3 rounded text-xs sm:text-sm transition">
+    <div id="view-admin" class="hidden p-4 sm:p-6 max-w-6xl mx-auto w-full space-y-6">
+        <div class="flex justify-between items-center">
+            <div>
+                <h2 class="text-xl sm:text-2xl font-bold text-slate-900">Gestión de Usuarios</h2>
+                <p class="text-xs text-slate-500">Registro de acceso institucional</p>
+            </div>
+            <button onclick="showDashboard()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 py-1.5 px-3.5 rounded-xl text-xs font-semibold transition">
                 <i class="fas fa-arrow-left mr-1"></i> Volver
             </button>
         </div>
 
-        <div class="bg-white p-4 sm:p-6 rounded shadow mb-6">
-            <h3 class="text-base font-bold mb-4 border-b pb-2">Registrar Nuevo Usuario</h3>
-            <form id="register-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <h3 class="text-sm font-bold text-slate-800 mb-4 pb-2 border-b">Registrar Nuevo Usuario</h3>
+            <form id="register-form" class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs sm:text-sm">
                 <div>
-                    <label class="block text-xs font-medium text-gray-700">Nombre Completo</label>
-                    <input type="text" id="reg-name" required class="mt-1 w-full border rounded py-2 px-3 text-sm">
+                    <label class="block font-medium text-slate-700 mb-1">Nombre Completo</label>
+                    <input type="text" id="reg-name" required class="w-full border border-slate-300 rounded-xl py-2 px-3">
                 </div>
                 <div>
-                    <label class="block text-xs font-medium text-gray-700">Correo Electrónico</label>
-                    <input type="email" id="reg-email" required class="mt-1 w-full border rounded py-2 px-3 text-sm">
+                    <label class="block font-medium text-slate-700 mb-1">Correo Electrónico</label>
+                    <input type="email" id="reg-email" required class="w-full border border-slate-300 rounded-xl py-2 px-3">
                 </div>
                 <div>
-                    <label class="block text-xs font-medium text-gray-700">Contraseña</label>
-                    <input type="password" id="reg-password" required minlength="4" class="mt-1 w-full border rounded py-2 px-3 text-sm">
+                    <label class="block font-medium text-slate-700 mb-1">Contraseña</label>
+                    <input type="password" id="reg-password" required minlength="4" class="w-full border border-slate-300 rounded-xl py-2 px-3">
                 </div>
                 <div>
-                    <label class="block text-xs font-medium text-gray-700">Rol del Usuario</label>
-                    <select id="reg-role" required class="mt-1 w-full border rounded py-2 px-3 bg-white text-sm">
-                        <option value="" disabled selected>Seleccione un rol...</option>
+                    <label class="block font-medium text-slate-700 mb-1">Rol</label>
+                    <select id="reg-role" required class="w-full border border-slate-300 rounded-xl py-2 px-3 bg-white">
+                        <option value="" disabled selected>Seleccionar rol...</option>
                         <option value="director">Director</option>
                         <option value="seguimiento">Seguimiento</option>
                     </select>
                 </div>
                 <div class="md:col-span-2 mt-2">
-                    <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded font-bold text-sm transition">
-                        <i class="fas fa-user-plus mr-1"></i> Crear Usuario
+                    <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 px-4 rounded-xl font-bold transition">
+                        <i class="fas fa-user-plus mr-1"></i> Guardar Usuario
                     </button>
                 </div>
             </form>
         </div>
 
-        <div class="bg-white p-4 sm:p-6 rounded shadow">
-            <h3 class="text-base font-bold mb-4 border-b pb-2">Usuarios Registrados</h3>
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="p-4 border-b bg-slate-50 font-bold text-sm text-slate-800">Usuarios Activos</div>
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200 text-xs sm:text-sm">
-                    <thead class="bg-gray-50">
+                <table class="min-w-full divide-y divide-slate-200 text-xs sm:text-sm">
+                    <thead class="bg-slate-100">
                         <tr>
-                            <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase">Nombre</th>
-                            <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase">Correo</th>
-                            <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase">Rol</th>
+                            <th class="px-4 py-3 text-left font-bold text-slate-600 uppercase">Nombre</th>
+                            <th class="px-4 py-3 text-left font-bold text-slate-600 uppercase">Correo</th>
+                            <th class="px-4 py-3 text-left font-bold text-slate-600 uppercase">Rol</th>
                         </tr>
                     </thead>
-                    <tbody id="users-table-body" class="bg-white divide-y divide-gray-200"></tbody>
+                    <tbody id="users-table-body" class="divide-y divide-slate-100"></tbody>
                 </table>
             </div>
         </div>
     </div>
 
-    <!-- Vista: Dashboard (Direcciones) -->
-    <div id="view-dashboard" class="hidden p-3 sm:p-6 max-w-6xl mx-auto">
-        <h2 class="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-6">Direcciones del Despacho</h2>
-        <div id="direcciones-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4"></div>
+    <!-- Vista: Dashboard con Tarjetas Estadísticas y Tabla General -->
+    <div id="view-dashboard" class="hidden p-4 sm:p-6 max-w-7xl mx-auto w-full space-y-6">
+        
+        <!-- Tarjetas de Métricas Estadísticas Globales -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
+                    <i class="fas fa-tasks"></i>
+                </div>
+                <div>
+                    <span class="text-[11px] font-semibold text-slate-400 block uppercase">Total Tareas</span>
+                    <span id="stat-total-tasks" class="text-lg font-extrabold text-slate-900">0</span>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div>
+                    <span class="text-[11px] font-semibold text-slate-400 block uppercase">Pendientes</span>
+                    <span id="stat-pending-tasks" class="text-lg font-extrabold text-slate-900">0</span>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div>
+                    <span class="text-[11px] font-semibold text-slate-400 block uppercase">Completadas</span>
+                    <span id="stat-completed-tasks" class="text-lg font-extrabold text-slate-900">0</span>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div>
+                    <span class="text-[11px] font-semibold text-slate-400 block uppercase">Eficiencia</span>
+                    <span id="stat-efficiency-rate" class="text-lg font-extrabold text-slate-900">0%</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabla Estadística de Gestión por Dirección -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="p-4 bg-slate-900 text-white flex justify-between items-center">
+                <h3 class="font-bold text-xs sm:text-sm tracking-wide uppercase"><i class="fas fa-table mr-2 text-indigo-400"></i> Tabla Estadística de Gestión por Dirección</h3>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-slate-100 text-xs sm:text-sm">
+                    <thead class="bg-slate-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left font-bold text-slate-600 uppercase">Dependencia / Dirección</th>
+                            <th class="px-4 py-3 text-center font-bold text-slate-600 uppercase">Total</th>
+                            <th class="px-4 py-3 text-center font-bold text-slate-600 uppercase">Pendientes</th>
+                            <th class="px-4 py-3 text-center font-bold text-slate-600 uppercase">En Proceso</th>
+                            <th class="px-4 py-3 text-center font-bold text-slate-600 uppercase">Completadas</th>
+                            <th class="px-4 py-3 text-center font-bold text-slate-600 uppercase">Eficiencia</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stats-table-body" class="divide-y divide-slate-100"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Tarjetas de Direcciones -->
+        <div>
+            <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-3">Direcciones del Despacho</h3>
+            <div id="direcciones-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+        </div>
     </div>
 
-    <!-- Vista: Novedades Organizadas por Categorías -->
-    <div id="view-novedades" class="hidden p-3 sm:p-6 max-w-6xl mx-auto space-y-6">
-        
-        <!-- Encabezado -->
+    <!-- Vista: Novedades Integradas (Accesible para todos) -->
+    <div id="view-novedades" class="hidden p-4 sm:p-6 max-w-7xl mx-auto w-full space-y-6">
         <div class="flex justify-between items-center">
             <div>
-                <h2 class="text-xl sm:text-2xl font-bold text-amber-900"><i class="fas fa-newspaper mr-2"></i>Panel de Novedades del Despacho</h2>
-                <p class="text-xs sm:text-sm text-gray-500">Resumen unificado de estatus, tareas críticas y agenda de reuniones</p>
+                <h2 class="text-xl sm:text-2xl font-bold text-slate-900"><i class="fas fa-bell text-indigo-600 mr-2"></i>Panel Único de Novedades</h2>
+                <p class="text-xs text-slate-500">Resumen ejecutivo de estatus, tareas críticas y agenda de reuniones</p>
             </div>
-            <button onclick="markAllNovedadesRead()" class="bg-gray-700 hover:bg-gray-800 text-white font-semibold py-1.5 px-3 rounded text-xs sm:text-sm transition">
+            <button onclick="markAllNovedadesRead()" class="bg-slate-800 hover:bg-slate-700 text-white font-semibold py-1.5 px-3 rounded-xl text-xs transition">
                 <i class="fas fa-check-double mr-1"></i> Marcar Todo Visto
             </button>
         </div>
 
-        <!-- 1. Estatus y Avances Actualizados -->
-        <div class="bg-white rounded-lg shadow border border-amber-200 overflow-hidden">
-            <div class="bg-amber-100 p-3 border-b border-amber-200 font-bold text-xs sm:text-sm text-amber-900 flex items-center">
-                <i class="fas fa-sync-alt mr-2"></i> Estatus y Avances Recientes
+        <!-- 1. Estatus Recientes -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="bg-indigo-50 p-3 border-b border-indigo-100 font-bold text-xs sm:text-sm text-indigo-900 flex items-center">
+                <i class="fas fa-comments text-indigo-600 mr-2"></i> Cambios de Estatus y Avances Recientes
             </div>
-            <div id="novedades-estatus-container" class="divide-y divide-gray-100">
-                <p class="text-xs text-gray-400 p-3">Cargando actualizaciones...</p>
-            </div>
+            <div id="novedades-estatus-container" class="divide-y divide-slate-100"></div>
         </div>
 
-        <!-- 2. Tareas Próximas a la Fecha Límite -->
-        <div class="bg-white rounded-lg shadow border border-blue-200 overflow-hidden">
-            <div class="bg-blue-100 p-3 border-b border-blue-200 font-bold text-xs sm:text-sm text-blue-900 flex items-center">
-                <i class="fas fa-hourglass-half mr-2"></i> Tareas Próximas a Vencer (Ordenadas por Urgencia)
+        <!-- 2. Tareas Próximas a Vencer -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="bg-amber-50 p-3 border-b border-amber-100 font-bold text-xs sm:text-sm text-amber-900 flex items-center">
+                <i class="fas fa-hourglass-half text-amber-600 mr-2"></i> Tareas Próximas a Fecha Límite (Ordenadas por Urgencia)
             </div>
-            <div id="novedades-proximas-tareas-container" class="divide-y divide-gray-100">
-                <p class="text-xs text-gray-400 p-3">Cargando pendientes...</p>
-            </div>
+            <div id="novedades-proximas-tareas-container" class="divide-y divide-slate-100"></div>
         </div>
 
-        <!-- 3. Agenda de Reuniones por Fecha y Hora -->
-        <div class="bg-white rounded-lg shadow border border-purple-200 overflow-hidden">
-            <div class="bg-purple-100 p-3 border-b border-purple-200 font-bold text-xs sm:text-sm text-purple-900 flex items-center">
-                <i class="fas fa-calendar-alt mr-2"></i> Agenda de Reuniones (Orden Cronológico)
+        <!-- 3. Agenda de Reuniones Cronológica -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="bg-slate-100 p-3 border-b border-slate-200 font-bold text-xs sm:text-sm text-slate-800 flex items-center">
+                <i class="fas fa-calendar-check text-slate-600 mr-2"></i> Agenda Cronológica de Reuniones
             </div>
-            <div id="novedades-reuniones-container" class="divide-y divide-gray-100">
-                <p class="text-xs text-gray-400 p-3">Cargando agenda...</p>
-            </div>
+            <div id="novedades-reuniones-container" class="divide-y divide-slate-100"></div>
         </div>
-
     </div>
 
     <!-- Vista: Agenda de Reuniones -->
-    <div id="view-agenda" class="hidden p-3 sm:p-6 max-w-6xl mx-auto">
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
+    <div id="view-agenda" class="hidden p-4 sm:p-6 max-w-7xl mx-auto w-full space-y-6">
+        <div class="flex justify-between items-center">
             <div>
-                <h2 class="text-xl sm:text-2xl font-bold text-purple-900"><i class="fas fa-calendar-alt mr-2"></i>Agenda de Reuniones</h2>
-                <p class="text-xs sm:text-sm text-gray-500">Programación de mesas de trabajo e insumos requeridos</p>
+                <h2 class="text-xl sm:text-2xl font-bold text-slate-900"><i class="fas fa-calendar-alt text-amber-500 mr-2"></i>Agenda de Reuniones</h2>
+                <p class="text-xs text-slate-500">Mesas de trabajo e insumos requeridos</p>
             </div>
-            <button onclick="openMeetingModal()" class="bg-purple-700 hover:bg-purple-800 text-white font-bold py-2 px-4 rounded shadow text-xs sm:text-sm transition">
+            <button onclick="openMeetingModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 px-4 rounded-xl shadow-sm text-xs sm:text-sm transition">
                 <i class="fas fa-plus mr-1"></i> Agendar Reunión
             </button>
         </div>
 
-        <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200 text-xs sm:text-sm">
-                    <thead class="bg-purple-50">
+                <table class="min-w-full divide-y divide-slate-200 text-xs sm:text-sm">
+                    <thead class="bg-slate-50">
                         <tr>
-                            <th class="px-4 py-3 text-left font-medium text-purple-900 uppercase">Fecha / Hora</th>
-                            <th class="px-4 py-3 text-left font-medium text-purple-900 uppercase">Asunto y Requerimientos</th>
-                            <th class="px-4 py-3 text-left font-medium text-purple-900 uppercase">Direcciones Convocadas</th>
-                            <th class="px-4 py-3 text-left font-medium text-purple-900 uppercase">Estado / Minuta</th>
+                            <th class="px-4 py-3 text-left font-bold text-slate-600 uppercase">Fecha / Hora</th>
+                            <th class="px-4 py-3 text-left font-bold text-slate-600 uppercase">Asunto & Insumos</th>
+                            <th class="px-4 py-3 text-left font-bold text-slate-600 uppercase">Convocados</th>
+                            <th class="px-4 py-3 text-left font-bold text-slate-600 uppercase">Estado / Minuta</th>
                         </tr>
                     </thead>
-                    <tbody id="meetings-tbody" class="bg-white divide-y divide-gray-200"></tbody>
+                    <tbody id="meetings-tbody" class="divide-y divide-slate-100"></tbody>
                 </table>
             </div>
         </div>
     </div>
 
     <!-- Vista: Tareas por Dirección -->
-    <div id="view-tasks" class="hidden p-3 sm:p-6 max-w-6xl mx-auto">
-        <div class="flex justify-between items-center mb-4 sm:mb-6">
-            <h2 id="current-dir-title" class="text-lg sm:text-2xl font-bold text-blue-900 truncate"></h2>
-            <button onclick="showDashboard()" class="bg-gray-600 hover:bg-gray-700 text-white py-1 px-3 rounded text-xs sm:text-sm transition">
+    <div id="view-tasks" class="hidden p-4 sm:p-6 max-w-7xl mx-auto w-full space-y-6">
+        <div class="flex justify-between items-center">
+            <h2 id="current-dir-title" class="text-lg sm:text-2xl font-bold text-slate-900 truncate"></h2>
+            <button onclick="showDashboard()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 py-1.5 px-3.5 rounded-xl text-xs font-semibold transition">
                 <i class="fas fa-arrow-left mr-1"></i> Volver
             </button>
         </div>
 
-        <div class="flex gap-2 sm:gap-4 mb-4 sm:mb-6">
-            <button onclick="openTaskModal()" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-3 sm:px-4 rounded shadow font-medium text-xs sm:text-sm transition">
+        <div class="flex gap-2 sm:gap-3">
+            <button onclick="openTaskModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white py-2 px-4 rounded-xl shadow-sm font-semibold text-xs sm:text-sm transition">
                 <i class="fas fa-plus mr-1"></i> Nueva Tarea
             </button>
-            <button onclick="openCallModal()" class="bg-orange-500 hover:bg-orange-600 text-white py-2 px-3 sm:px-4 rounded shadow font-medium text-xs sm:text-sm transition">
+            
+            <!-- Botón RESTRICTO EXCLUSIVAMENTE AL DIRECTOR -->
+            <button id="btn-convocar-personal" onclick="openCallModal()" class="hidden bg-amber-500 hover:bg-amber-400 text-slate-900 py-2 px-4 rounded-xl shadow-sm font-bold text-xs sm:text-sm transition">
                 <i class="fas fa-bullhorn mr-1"></i> Convocar Personal
             </button>
         </div>
 
-        <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200 text-xs sm:text-sm">
-                    <thead class="bg-gray-50">
+                <table class="min-w-full divide-y divide-slate-200 text-xs sm:text-sm">
+                    <thead class="bg-slate-50">
                         <tr>
-                            <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase">Tarea / Asunto</th>
-                            <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase">Responsable y Fecha</th>
-                            <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase">Avances y Bitácora</th>
-                            <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase">Estado y Auditoría</th>
+                            <th class="px-4 py-3 text-left font-bold text-slate-600 uppercase">Tarea / Asunto</th>
+                            <th class="px-4 py-3 text-left font-bold text-slate-600 uppercase">Responsable</th>
+                            <th class="px-4 py-3 text-left font-bold text-slate-600 uppercase">Bitácora / Avances</th>
+                            <th class="px-4 py-3 text-left font-bold text-slate-600 uppercase">Estado & Auditoría</th>
                         </tr>
                     </thead>
-                    <tbody id="tasks-tbody" class="bg-white divide-y divide-gray-200"></tbody>
+                    <tbody id="tasks-tbody" class="divide-y divide-slate-100"></tbody>
                 </table>
             </div>
         </div>
     </div>
 
     <!-- Modales -->
-    <div id="modal-meeting" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50 p-4">
-        <div class="bg-white p-5 rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <h3 class="text-base sm:text-lg font-bold mb-3 text-purple-900"><i class="fas fa-calendar-plus mr-2"></i>Agendar Reunión</h3>
+    <div id="modal-meeting" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center hidden z-50 p-4">
+        <div class="bg-white p-6 rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto border border-slate-200">
+            <h3 class="text-base sm:text-lg font-bold mb-3 text-slate-900"><i class="fas fa-calendar-plus mr-2 text-indigo-600"></i>Agendar Reunión</h3>
             <form id="form-meeting" class="space-y-3">
                 <div>
-                    <label class="block text-xs font-medium">Asunto / Motivo</label>
-                    <input type="text" id="meet-title" required class="mt-1 w-full border rounded py-2 px-3 text-sm" placeholder="Ej: Revisión de casos de viviendas afectadas">
+                    <label class="block text-xs font-semibold text-slate-700">Asunto / Motivo</label>
+                    <input type="text" id="meet-title" required class="mt-1 w-full border border-slate-300 rounded-xl py-2 px-3 text-sm">
                 </div>
                 <div>
-                    <label class="block text-xs font-medium mb-1">Direcciones Convocadas</label>
-                    <div id="meet-dirs-container" class="max-h-32 overflow-y-auto border rounded p-2 bg-gray-50 text-xs grid grid-cols-1 gap-1"></div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Direcciones Convocadas</label>
+                    <div id="meet-dirs-container" class="max-h-32 overflow-y-auto border border-slate-200 rounded-xl p-2 bg-slate-50 text-xs grid grid-cols-1 gap-1"></div>
                 </div>
                 <div class="grid grid-cols-2 gap-2">
                     <div>
-                        <label class="block text-xs font-medium">Fecha</label>
-                        <input type="date" id="meet-date" required class="mt-1 w-full border rounded py-2 px-3 text-sm">
+                        <label class="block text-xs font-semibold text-slate-700">Fecha</label>
+                        <input type="date" id="meet-date" required class="mt-1 w-full border border-slate-300 rounded-xl py-2 px-3 text-sm">
                     </div>
                     <div>
-                        <label class="block text-xs font-medium">Hora</label>
-                        <input type="time" id="meet-time" required class="mt-1 w-full border rounded py-2 px-3 text-sm">
+                        <label class="block text-xs font-semibold text-slate-700">Hora</label>
+                        <input type="time" id="meet-time" required class="mt-1 w-full border border-slate-300 rounded-xl py-2 px-3 text-sm">
                     </div>
                 </div>
                 <div>
-                    <label class="block text-xs font-medium">Orden del Día / Puntos a Tratar</label>
-                    <textarea id="meet-agenda" required class="mt-1 w-full border rounded py-2 px-3 text-sm" rows="2" placeholder="Puntos a tratar..."></textarea>
+                    <label class="block text-xs font-semibold text-slate-700">Orden del Día</label>
+                    <textarea id="meet-agenda" required class="mt-1 w-full border border-slate-300 rounded-xl py-2 px-3 text-sm" rows="2"></textarea>
                 </div>
                 <div>
-                    <label class="block text-xs font-medium text-amber-900 font-bold">Requerimientos / Materiales Necesarios</label>
-                    <textarea id="meet-reqs" class="mt-1 w-full border border-amber-300 bg-amber-50 rounded py-2 px-3 text-sm" rows="2" placeholder="Ej: Traer fichas técnicas, expedientes..."></textarea>
+                    <label class="block text-xs font-semibold text-amber-900">Requerimientos / Insumos Previo a la Reunión</label>
+                    <textarea id="meet-reqs" class="mt-1 w-full border border-amber-300 bg-amber-50 rounded-xl py-2 px-3 text-sm" rows="2" placeholder="Ej: Traer fichas técnicas de casas dañadas..."></textarea>
                 </div>
                 <div class="flex justify-end gap-2 mt-4">
-                    <button type="button" onclick="closeModals()" class="bg-gray-300 hover:bg-gray-400 py-1.5 px-4 rounded text-xs sm:text-sm">Cancelar</button>
-                    <button type="submit" class="bg-purple-700 hover:bg-purple-800 text-white py-1.5 px-4 rounded text-xs sm:text-sm font-bold">Agendar</button>
+                    <button type="button" onclick="closeModals()" class="bg-slate-200 hover:bg-slate-300 py-2 px-4 rounded-xl text-xs font-semibold">Cancelar</button>
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white py-2 px-4 rounded-xl text-xs font-bold">Agendar</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <div id="modal-task" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50 p-4">
-        <div class="bg-white p-5 rounded-lg shadow-xl w-full max-w-md">
-            <h3 class="text-base sm:text-lg font-bold mb-3">Agregar Tarea</h3>
+    <div id="modal-task" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center hidden z-50 p-4">
+        <div class="bg-white p-6 rounded-2xl shadow-xl w-full max-w-md border border-slate-200">
+            <h3 class="text-base sm:text-lg font-bold mb-3 text-slate-900">Agregar Tarea</h3>
             <form id="form-task" class="space-y-3 text-xs sm:text-sm">
                 <div>
-                    <label class="block font-medium">Descripción / Asunto</label>
-                    <textarea id="task-desc" required class="mt-1 w-full border rounded py-2 px-3" rows="3" placeholder="Detalle la tarea..."></textarea>
+                    <label class="block font-semibold text-slate-700">Descripción / Asunto</label>
+                    <textarea id="task-desc" required class="mt-1 w-full border border-slate-300 rounded-xl py-2 px-3" rows="3"></textarea>
                 </div>
                 <div>
-                    <label class="block font-medium">Responsable</label>
-                    <select id="task-resp" required class="mt-1 w-full border rounded py-2 px-3 bg-white"></select>
+                    <label class="block font-semibold text-slate-700">Responsable</label>
+                    <select id="task-resp" required class="mt-1 w-full border border-slate-300 rounded-xl py-2 px-3 bg-white"></select>
                 </div>
                 <div>
-                    <label class="block font-medium">Fecha de Cumplimiento</label>
-                    <input type="date" id="task-date" required class="mt-1 w-full border rounded py-2 px-3">
+                    <label class="block font-semibold text-slate-700">Fecha Límite</label>
+                    <input type="date" id="task-date" required class="mt-1 w-full border border-slate-300 rounded-xl py-2 px-3">
                 </div>
                 <div class="flex justify-end gap-2 mt-4">
-                    <button type="button" onclick="closeModals()" class="bg-gray-300 hover:bg-gray-400 py-1.5 px-4 rounded">Cancelar</button>
-                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white py-1.5 px-4 rounded font-medium">Guardar</button>
+                    <button type="button" onclick="closeModals()" class="bg-slate-200 hover:bg-slate-300 py-2 px-4 rounded-xl font-semibold">Cancelar</button>
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white py-2 px-4 rounded-xl font-bold">Guardar</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <div id="modal-call" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50 p-4">
-        <div class="bg-white p-5 rounded-lg shadow-xl w-full max-w-md text-xs sm:text-sm">
-            <h3 class="text-base sm:text-lg font-bold mb-3 text-orange-600"><i class="fas fa-bullhorn mr-2"></i>Convocar Personal</h3>
-            <form id="form-call" class="space-y-3">
+    <!-- Modal: Solo para el Director -->
+    <div id="modal-call" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center hidden z-50 p-4">
+        <div class="bg-white p-6 rounded-2xl shadow-xl w-full max-w-md border border-slate-200">
+            <h3 class="text-base sm:text-lg font-bold mb-3 text-amber-600"><i class="fas fa-bullhorn mr-2"></i>Convocar Personal (Exclusivo Director)</h3>
+            <form id="form-call" class="space-y-3 text-xs sm:text-sm">
                 <div>
-                    <label class="block font-medium">Llamar a:</label>
-                    <select id="call-to" required class="mt-1 w-full border rounded py-2 px-3 bg-white"></select>
+                    <label class="block font-semibold text-slate-700">Convocar a:</label>
+                    <select id="call-to" required class="mt-1 w-full border border-slate-300 rounded-xl py-2 px-3 bg-white"></select>
                 </div>
                 <div>
-                    <label class="block font-medium">Motivo / Solicitud</label>
-                    <textarea id="call-msg" required class="mt-1 w-full border rounded py-2 px-3" rows="3" placeholder="Ej: Ven a mi oficina..."></textarea>
+                    <label class="block font-semibold text-slate-700">Solicitud / Instrucción</label>
+                    <textarea id="call-msg" required class="mt-1 w-full border border-slate-300 rounded-xl py-2 px-3" rows="3" placeholder="Ej: Ven a mi oficina a revisar las fichas..."></textarea>
                 </div>
                 <div class="flex justify-end gap-2 mt-4">
-                    <button type="button" onclick="closeModals()" class="bg-gray-300 hover:bg-gray-400 py-1.5 px-4 rounded">Cancelar</button>
-                    <button type="submit" class="bg-orange-500 hover:bg-orange-600 text-white py-1.5 px-4 rounded font-medium">Enviar Notificación</button>
+                    <button type="button" onclick="closeModals()" class="bg-slate-200 hover:bg-slate-300 py-2 px-4 rounded-xl font-semibold">Cancelar</button>
+                    <button type="submit" class="bg-amber-500 hover:bg-amber-400 text-slate-900 py-2 px-4 rounded-xl font-bold">Enviar Notificación</button>
                 </div>
             </form>
         </div>
